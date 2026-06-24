@@ -60,7 +60,7 @@ export type {
 export { DEFAULT_POSE } from "./types";
 
 export { buildNet } from "./net";
-export type { NetGraph, PartEdge } from "./net";
+export type { NetGraph, PartEdge, CircuitContext } from "./net";
 
 export { energizedRailsForNet } from "./powerVisualization";
 export type { EnergizedRails, RailEnergization } from "./powerVisualization";

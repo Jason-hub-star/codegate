@@ -4,10 +4,19 @@
  * 전원 모델(M3.5): **실제 아두이노 핀**이 출처. 5V/3V3/VIN·디지털핀 = 전원원, GND핀 = 그라운드.
  * (레일은 더 이상 자동 전원 아님 — 5V핀↔레일을 점퍼로 이어야 전원이 들어온다)
  */
-import { getHoleMap, nodeIdForHole } from "./breadboard";
-import { getBoardPins, isBoardPinId } from "./board";
+import { getHoleMap, nodeIdForHole, type BreadboardDef } from "./breadboard";
+import { getBoardPins, isBoardPinId, type BoardDef } from "./board";
 import { PARTS, partEndpoints } from "./parts";
 import type { CircuitModel } from "./types";
+
+/**
+ * 회로 분석 컨텍스트 — 어떤 빵판/보드 위의 회로인가. 미지정 시 활성 싱글톤(UI 기본).
+ * MCP/서버는 codec 에서 디코드한 빵판·보드를 명시 주입해 요청간 독립(동시요청 오염 방지).
+ */
+export interface CircuitContext {
+  breadboard?: BreadboardDef;
+  board?: BoardDef;
+}
 
 export interface PartEdge {
   uid: string;
@@ -36,7 +45,7 @@ export interface NetGraph {
 
 const POWER_ROLES = new Set(["power5", "power3v3", "vin", "digital", "pwm"]);
 
-export function buildNet(model: CircuitModel): NetGraph {
+export function buildNet(model: CircuitModel, ctx: CircuitContext = {}): NetGraph {
   const parent = new Map<string, string>();
   const ensure = (n: string) => {
     if (!parent.has(n)) parent.set(n, n);
@@ -57,12 +66,12 @@ export function buildNet(model: CircuitModel): NetGraph {
     parent.set(find(a), find(b));
   };
 
-  const holeMap = getHoleMap();
-  const pins = getBoardPins();
+  const holeMap = getHoleMap(ctx.breadboard);
+  const pins = getBoardPins(ctx.board);
 
   // 엔드포인트(빵판 홀 | 보드 핀) → raw 노드 id
   const nodeOfRaw = (id: string): string | null => {
-    if (isBoardPinId(id)) return id; // 핀 자체가 노드
+    if (isBoardPinId(id, ctx.board)) return id; // 핀 자체가 노드
     const h = holeMap.get(id);
     return h ? nodeIdForHole(h) : null;
   };

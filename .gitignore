@@ -51,3 +51,6 @@ AGENTS.md
 CLAUDE.md
 SSOT.md
 3D_COMPONENT_HARVEST_REPORT.md
+
+# MCP server bundle
+dist/

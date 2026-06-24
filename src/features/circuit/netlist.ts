@@ -4,7 +4,7 @@
  * 인스턴스 핀-홀 나열보다 LLM이 추론 없이 읽기 쉬운 형식(EDA 넷리스트 관례).
  * 단일 함수 → UI · serializeNetlist(텍스트) · (미래) 에이전트 JSON 이 공유.
  */
-import { buildNet } from "./net";
+import { buildNet, type CircuitContext } from "./net";
 import { PARTS, partEndpoints } from "./parts";
 import { getBoardPins, boardRefLabel } from "./board";
 import type { CircuitModel } from "./types";
@@ -41,8 +41,8 @@ const boardPinLabel = (label: string, role: string): string =>
   (role === "digital" || role === "pwm") && /^\d+$/.test(label) ? `D${label}` : label;
 
 /** 회로 → 넷 중심 연결 구조(결정론). */
-export function buildNetlist(model: CircuitModel): Netlist {
-  const net = buildNet(model);
+export function buildNetlist(model: CircuitModel, ctx: CircuitContext = {}): Netlist {
+  const net = buildNet(model, ctx);
   const groups = new Map<string, NetlistTerminal[]>();
   const unconnected: Netlist["unconnected"] = [];
 
@@ -77,8 +77,8 @@ export function buildNetlist(model: CircuitModel): Netlist {
 
   // 보드 핀: 부품 단자가 있는 넷에 속하면 단자로 합류(전원/신호 출처 표시).
   // 부품과 무관한 단독 핀은 노이즈라 제외.
-  const ref = boardRefLabel();
-  for (const ap of getBoardPins()) {
+  const ref = boardRefLabel(ctx.board);
+  for (const ap of getBoardPins(ctx.board)) {
     const root = net.nodeOfHole(ap.id);
     if (!root || !groups.has(root)) continue;
     groups.get(root)!.push({

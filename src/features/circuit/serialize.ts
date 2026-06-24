@@ -2,9 +2,16 @@
  * 직렬화 — 회로 + verdict 를 입문자 한국어 가독 텍스트로 (ARCHITECTURE §B).
  * 토큰효율보다 **한국어 가독성** 우선(차별점, research/13). M4 LLM 입력.
  */
-import { getBoardPinMap, isBoardPinId, boardRefLabel } from "./board";
+import {
+  getBoardPinMap,
+  isBoardPinId,
+  boardRefLabel,
+  activeBoard,
+  type BoardDef,
+} from "./board";
 import { buildBom, type BomItem } from "./bom";
 import { buildNetlist, type Netlist, type NetlistEntry } from "./netlist";
+import type { CircuitContext } from "./net";
 import type { CircuitModel, Protocol } from "./types";
 import type { Verdict } from "./diagnose";
 
@@ -39,26 +46,26 @@ const RAIL_LABEL: Record<string, string> = {
   "B-": "−레일(아래)",
 };
 
-/** 넷(node) 친화 라벨 — 전원/GND/열n */
-function netName(net: NetlistEntry): string {
+/** 넷(node) 친화 라벨 — 전원/GND/열n (기본=활성 보드) */
+function netName(net: NetlistEntry, board: BoardDef = activeBoard()): string {
   if (net.role === "power") return "전원";
   if (net.role === "ground") return "GND";
   const col = net.nodeId.match(/^COL(\d+)_(T|B)$/);
   if (col) return `열${col[1]} ${col[2] === "T" ? "상단" : "하단"}`;
   const rail = net.nodeId.match(/^RAIL_(.+)$/);
   if (rail) return RAIL_LABEL[rail[1]] ?? net.nodeId;
-  if (isBoardPinId(net.nodeId)) return holeLabel(net.nodeId);
+  if (isBoardPinId(net.nodeId, board)) return holeLabel(net.nodeId, board);
   return net.nodeId;
 }
 
 const termLabel = (t: { ref: string; pin: string }): string => `${t.ref} ${t.pin}`;
 
-/** 넷리스트 → 한국어 연결 구조 텍스트 (LLM 프롬프트 주입용). */
-export function serializeNetlist(nl: Netlist): string {
+/** 넷리스트 → 한국어 연결 구조 텍스트 (LLM 프롬프트 주입용, 기본=활성 보드). */
+export function serializeNetlist(nl: Netlist, ctx: CircuitContext = {}): string {
   if (nl.nets.length === 0 && nl.unconnected.length === 0) return "- 연결 없음";
   const out: string[] = [];
   for (const net of nl.nets) {
-    out.push(`- ${netName(net)}: ${net.terminals.map(termLabel).join(", ")}`);
+    out.push(`- ${netName(net, ctx.board)}: ${net.terminals.map(termLabel).join(", ")}`);
   }
   if (nl.unconnected.length) {
     out.push(`- 미연결: ${nl.unconnected.map(termLabel).join(", ")}`);
@@ -66,23 +73,27 @@ export function serializeNetlist(nl: Netlist): string {
   return out.join("\n");
 }
 
-/** 홀/핀 id → 사람이 읽는 라벨 */
-export function holeLabel(id: string): string {
-  if (isBoardPinId(id)) {
-    const pin = getBoardPinMap().get(id);
+/** 홀/핀 id → 사람이 읽는 라벨 (기본=활성 보드) */
+export function holeLabel(id: string, board: BoardDef = activeBoard()): string {
+  if (isBoardPinId(id, board)) {
+    const pin = getBoardPinMap(board).get(id);
     if (!pin) return id;
     const label =
       (pin.role === "digital" || pin.role === "pwm") && /^\d+$/.test(pin.label)
         ? `D${pin.label}`
         : pin.label;
-    return `${boardRefLabel()} ${label}`;
+    return `${boardRefLabel(board)} ${label}`;
   }
   const rail = id.match(/^(T\+|T-|B\+|B-)_/);
   if (rail) return RAIL_LABEL[rail[1]];
   return id; // 본체 홀 'e5' 등은 그대로
 }
 
-export function serialize(model: CircuitModel, verdict: Verdict): string {
+export function serialize(
+  model: CircuitModel,
+  verdict: Verdict,
+  ctx: CircuitContext = {},
+): string {
   const lines: string[] = [];
 
   // 요약 명세(무엇이 있나) — LLM이 부품 목록을 빠르게 파악.
@@ -92,12 +103,12 @@ export function serialize(model: CircuitModel, verdict: Verdict): string {
 
   // 연결 구조(무엇이 무엇과 연결됐나) — 넷 중심 넷리스트(인스턴스 나열보다 가독).
   lines.push("[연결 구조]");
-  lines.push(serializeNetlist(buildNetlist(model)));
+  lines.push(serializeNetlist(buildNetlist(model, ctx), ctx));
   // 사용자가 그은 점퍼선(원시) — 넷리스트가 전기 연결을, 이건 문자 그대로의 행위를 보존.
   if (model.wires.length) {
     lines.push("- 점퍼선:");
     for (const w of model.wires) {
-      lines.push(`  · ${holeLabel(w.a)} ↔ ${holeLabel(w.b)}`);
+      lines.push(`  · ${holeLabel(w.a, ctx.board)} ↔ ${holeLabel(w.b, ctx.board)}`);
     }
   }
 

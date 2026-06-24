@@ -173,47 +173,55 @@ export const BOARDS: Record<BoardId, BoardDef> = {
 };
 
 // ── 활성 보드 상태 (빵판 setActiveBreadboard 와 동일 규약) ──
+// ★ UI(브라우저·단일 사용자) 편의용 기본값. 핀 좌표는 보드 id당 불변(static 보정값/절차
+//   기하)이라 id별 캐시는 동시요청에 안전 — diagnose/buildNet 등은 보드를 인자로 받는다.
 let _activeId: BoardId = "arduino-uno";
-let _pins: BoardPin[] | null = null;
-let _pinMap: Map<string, BoardPin> | null = null;
+const _pinsCache = new Map<BoardId, BoardPin[]>();
+const _pinMapCache = new Map<BoardId, Map<string, BoardPin>>();
 
-/** 활성 보드 정의 */
+/** 활성 보드 정의 (인자 미지정 함수의 기본값) */
 export const activeBoard = (): BoardDef => BOARDS[_activeId];
-/** 직렬화/넷리스트 단자 출처 짧은 이름 */
-export const boardRefLabel = (): string => activeBoard().refLabel;
+/** 직렬화/넷리스트 단자 출처 짧은 이름 (기본=활성 보드) */
+export const boardRefLabel = (board: BoardDef = activeBoard()): string => board.refLabel;
 
-/** 무상태 불변식: 서버/MCP 진입점은 보드 1종 고정 — 런타임 setActiveBoard 호출 금지. */
-/** 활성 보드 교체 — 핀 캐시 무효화 필수(안 하면 옛 보드 잔존) */
+/**
+ * 활성 보드 교체 — UI 스왑 전용. 캐시는 id별 키라 무효화 불필요.
+ * MCP/서버 진입점은 이 함수를 호출하지 않고 함수 인자로 보드를 명시한다.
+ */
 export function setActiveBoard(id: BoardId): void {
   _activeId = id;
-  _pins = null;
-  _pinMap = null;
 }
 
-/** 보정/계산 좌표가 있는 핀만 반환(활성 보드). */
-export function getBoardPins(): BoardPin[] {
-  if (_pins) return _pins;
-  const b = activeBoard();
-  const coords = b.resolveCoords ? b.resolveCoords() : getCalibration(b.modelKey);
-  _pins = b.pinDefs
-    .filter((d) => coords[d.id])
-    .map((d) => {
-      const [x, y, z] = coords[d.id];
-      return { ...d, x, y, z };
-    });
-  return _pins;
+/** 보정/계산 좌표가 있는 핀만 반환(기본=활성 보드, id별 캐시). */
+export function getBoardPins(board: BoardDef = activeBoard()): BoardPin[] {
+  let pins = _pinsCache.get(board.id);
+  if (!pins) {
+    const coords = board.resolveCoords ? board.resolveCoords() : getCalibration(board.modelKey);
+    pins = board.pinDefs
+      .filter((d) => coords[d.id])
+      .map((d) => {
+        const [x, y, z] = coords[d.id];
+        return { ...d, x, y, z };
+      });
+    _pinsCache.set(board.id, pins);
+  }
+  return pins;
 }
 
-export function getBoardPinMap(): Map<string, BoardPin> {
-  if (!_pinMap) _pinMap = new Map(getBoardPins().map((p) => [p.id, p]));
-  return _pinMap;
+export function getBoardPinMap(board: BoardDef = activeBoard()): Map<string, BoardPin> {
+  let m = _pinMapCache.get(board.id);
+  if (!m) {
+    m = new Map(getBoardPins(board).map((p) => [p.id, p]));
+    _pinMapCache.set(board.id, m);
+  }
+  return m;
 }
 
 export function isBoardPowerPin(role: BoardPinRole): boolean {
   return role === "power5" || role === "power3v3" || role === "vin";
 }
 
-/** 끝점 id 가 활성 보드의 핀인가(빵판 홀과 구분). 핀 id↔홀 id 충돌 없음. */
-export function isBoardPinId(id: string): boolean {
-  return getBoardPinMap().has(id);
+/** 끝점 id 가 보드의 핀인가(빵판 홀과 구분, 기본=활성 보드). 핀 id↔홀 id 충돌 없음. */
+export function isBoardPinId(id: string, board: BoardDef = activeBoard()): boolean {
+  return getBoardPinMap(board).has(id);
 }

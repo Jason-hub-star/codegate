@@ -4,7 +4,7 @@
  * ★ 정오 판정은 diagnose 가, 전진 가이드는 여기가 담당. LLM 의존 0.
  * 목표: 입문자가 "지금 뭘 해야 하지?"에서 막히지 않게 해 배선 성공률을 높인다.
  */
-import { buildNet } from "./net";
+import { buildNet, type CircuitContext } from "./net";
 import { PARTS, partEndpoints } from "./parts";
 import type { Verdict } from "./diagnose";
 import type { CircuitModel } from "./types";
@@ -26,6 +26,7 @@ export interface NextStep {
 export function recommendNextStep(
   model: CircuitModel,
   verdict?: Verdict,
+  ctx: CircuitContext = {},
 ): NextStep | null {
   // 0. 오류가 있으면 그 수정이 최우선 (진단 메시지 재사용)
   if (verdict && verdict.findings.length > 0) {
@@ -64,7 +65,7 @@ export function recommendNextStep(
   }
 
   // 4. 부품별 전원/GND 미연결 점검 (net 사용, 저항 자체는 제외)
-  const net = buildNet(model);
+  const net = buildNet(model, ctx);
   const P = net.powerRoots;
   const G = net.groundRoots;
   for (const p of model.parts) {

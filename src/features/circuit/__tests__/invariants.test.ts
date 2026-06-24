@@ -10,6 +10,8 @@ import { describe, it, expect, afterEach } from "vitest";
 import { diagnose } from "../diagnose";
 import { serialize } from "../serialize";
 import { activeBreadboard, setActiveBreadboard, BREADBOARDS } from "../breadboard";
+import { activeBoard, BOARDS } from "../board";
+import type { CircuitContext } from "../net";
 import { SCENARIOS } from "../scenarios";
 
 describe("무상태 불변식 — M1", () => {
@@ -154,6 +156,59 @@ describe("무상태 불변식 — M1", () => {
       // half에서 재진단 — v1Half와 동일
       const v2Half = diagnose(SCENARIOS.ledCorrect.model);
       expect(v2Half).toEqual(v1Half);
+    });
+  });
+
+  // ── (d) 명시 컨텍스트 — MCP 동시요청 격리 (격차 #1 근본 수정 검증) ──
+  // MCP 진입점은 setActive를 호출하지 않고 codec 에서 디코드한 빵판·보드를 함수 인자로
+  // 주입한다. 서로 다른 보드/빵판 요청을 번갈아 돌려도 간섭이 없고, 전역 싱글톤은
+  // 기본값('half'/'arduino-uno') 그대로여야 한다(동시요청 오염 0).
+  describe("(d) 명시 컨텍스트 — 보드/빵판 주입 격리", () => {
+    const ARDUINO: CircuitContext = {
+      breadboard: BREADBOARDS.half,
+      board: BOARDS["arduino-uno"],
+    };
+    const ESP32: CircuitContext = {
+      breadboard: BREADBOARDS.full,
+      board: BOARDS["esp32-huzzah32"],
+    };
+
+    it("ctx가 실제로 흐른다 — 같은 회로라도 보드가 다르면 verdict가 다르다", () => {
+      // ledCorrect 는 아두이노 핀(AD_*)에 전원/GND 배선 → esp32엔 그 핀이 없어 평가가 달라짐
+      const onArduino = diagnose(SCENARIOS.ledCorrect.model, ARDUINO);
+      const onEsp = diagnose(SCENARIOS.ledCorrect.model, ESP32);
+      expect(onEsp).not.toEqual(onArduino);
+    });
+
+    it("인터리브해도 각 컨텍스트 결과 불변 + 전역 싱글톤 무변경", () => {
+      const baseEsp = diagnose(SCENARIOS.ledCorrect.model, ESP32);
+      const baseArd = diagnose(SCENARIOS.ledCorrect.model, ARDUINO);
+
+      // 서로 다른 컨텍스트 요청을 번갈아 (동시요청 시뮬레이션)
+      diagnose(SCENARIOS.shortCircuit.model, ARDUINO);
+      const esp2 = diagnose(SCENARIOS.ledCorrect.model, ESP32);
+      diagnose(SCENARIOS.ledNoResistor.model, ARDUINO);
+      const esp3 = diagnose(SCENARIOS.ledCorrect.model, ESP32);
+      const ard2 = diagnose(SCENARIOS.ledCorrect.model, ARDUINO);
+
+      expect(esp2).toEqual(baseEsp);
+      expect(esp3).toEqual(baseEsp);
+      expect(ard2).toEqual(baseArd);
+
+      // ★ 핵심: MCP 경로는 setActive를 부르지 않으므로 전역은 기본값 그대로
+      expect(activeBreadboard().id).toBe("half");
+      expect(activeBoard().id).toBe("arduino-uno");
+    });
+
+    it("serialize도 컨텍스트를 따른다 — 결정론 + 전역 무변경", () => {
+      const m = SCENARIOS.ledCorrect.model;
+      const sArd = serialize(m, diagnose(m, ARDUINO), ARDUINO);
+      const sArd2 = serialize(m, diagnose(m, ARDUINO), ARDUINO);
+      const sEsp = serialize(m, diagnose(m, ESP32), ESP32);
+      expect(sArd2).toBe(sArd); // 결정론
+      expect(sEsp).not.toBe(sArd); // 보드별로 다른 출력
+      expect(activeBreadboard().id).toBe("half");
+      expect(activeBoard().id).toBe("arduino-uno");
     });
   });
 });

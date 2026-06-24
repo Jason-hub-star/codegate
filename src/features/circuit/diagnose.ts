@@ -4,7 +4,7 @@
  * 오개념 추론(DEC-017): 배선 패턴 → 오개념 태그.
  * 판정 순서(research/11): 단락 → 전원/GND → 극성 → 열린회로 → 저항누락 → 핀충돌.
  */
-import { buildNet } from "./net";
+import { buildNet, type CircuitContext } from "./net";
 import { activeBoard, getBoardPins, type BoardPinRole } from "./board";
 import { PARTS, partEndpoints } from "./parts";
 import { energizedRailsForNet, type EnergizedRails } from "./powerVisualization";
@@ -52,8 +52,8 @@ const SEV_RANK: Record<Severity, number> = {
   low: 0,
 };
 
-export function diagnose(model: CircuitModel): Verdict {
-  const net = buildNet(model);
+export function diagnose(model: CircuitModel, ctx: CircuitContext = {}): Verdict {
+  const net = buildNet(model, ctx);
   const P = net.powerRoots;
   const G = net.groundRoots;
   const findings: Finding[] = [];
@@ -63,7 +63,7 @@ export function diagnose(model: CircuitModel): Verdict {
 
   // 보드 핀 role별 노드셋 (서보·버튼 정밀 진단용, DEC-039).
   // net.powerRoots 는 digital/pwm 까지 전원으로 묶으므로 "진짜 5V"·"PWM핀"·"입력핀"을 따로 만든다.
-  const boardPins = getBoardPins();
+  const boardPins = getBoardPins(ctx.board);
   const roleNodes = (...roles: BoardPinRole[]): Set<string> => {
     const rs = new Set(roles);
     return new Set(
@@ -374,7 +374,7 @@ export function diagnose(model: CircuitModel): Verdict {
 
   // ── 전압 호환 진단: 5V 전용 부품을 3.3V 보드(ESP32)에 전원 연결 시 경고 ──
   // 보드 logicV < 5 일 때만. 부품이 실제로 전원(P)에 연결됐을 때만(단순 미배치 제외).
-  const board = activeBoard();
+  const board = ctx.board ?? activeBoard();
   if (board.logicV < 5) {
     for (const p of model.parts) {
       if (conflictUids.has(p.uid)) continue;

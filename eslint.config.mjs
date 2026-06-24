@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // MCP 서버 번들 산출물(esbuild) — 소스가 아니므로 린트 제외.
+    "dist/**",
   ]),
 ]);
 

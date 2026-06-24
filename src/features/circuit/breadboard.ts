@@ -30,15 +30,20 @@ export const BREADBOARDS: Record<BreadboardId, BreadboardDef> = {
   full: { id: "full", label: "풀 빵판 (830홀)", cols: 63, tiePoints: 830 },
 };
 
-/** 현재 활성 빵판 (작업대 스왑 시 setActiveBreadboard 로 교체). 회로 초기화와 함께 바뀜. */
+/**
+ * 현재 활성 빵판 (작업대 스왑 시 setActiveBreadboard 로 교체). 회로 초기화와 함께 바뀜.
+ * ★ UI(브라우저·단일 사용자) 편의용 기본값일 뿐 — diagnose/buildNet 등 순수 함수는
+ *   빵판을 인자로 받을 수 있어 MCP 동시요청은 이 전역에 의존하지 않는다(요청간 독립).
+ */
 let _active: BreadboardDef = BREADBOARDS.half;
-/** 활성 빵판 정의 */
+/** 활성 빵판 정의 (인자 미지정 함수의 기본값) */
 export const activeBreadboard = (): BreadboardDef => _active;
-/** 무상태 불변식: 서버/MCP 진입점은 빵판 1종 고정 — 런타임 setActiveBreadboard 호출 금지(동시요청 오염 방지). */
-/** 활성 빵판 교체 — getHoleMap 캐시 무효화 필수(안 하면 옛 레이아웃 잔존) */
+/**
+ * 활성 빵판 교체 — UI 스왑 전용. 캐시는 id별 키라 무효화 불필요(레이아웃은 id당 불변).
+ * MCP/서버 진입점은 이 함수를 호출하지 않고 함수 인자로 빵판을 명시한다(동시요청 오염 방지).
+ */
 export function setActiveBreadboard(id: BreadboardId): void {
   _active = BREADBOARDS[id];
-  _holeMap = null;
 }
 
 /** 행 문자 a..j (a-e = 위 뱅크, f-j = 아래 뱅크, 중앙 홈으로 분리) */
@@ -68,9 +73,9 @@ export interface Hole {
 
 const RAVINE_HALF = PITCH; // 중앙 홈 반폭 → e와 f 사이 간격 = 2*PITCH
 
-/** 열 번호 → x (mm), 중앙 정렬 (활성 빵판 열수 기준) */
-export function colX(col: number): number {
-  return (col - (activeBreadboard().cols + 1) / 2) * PITCH;
+/** 열 번호 → x (mm), 중앙 정렬 (빵판 열수 기준, 기본=활성 빵판) */
+export function colX(col: number, bb: BreadboardDef = activeBreadboard()): number {
+  return (col - (bb.cols + 1) / 2) * PITCH;
 }
 
 /** 행 인덱스(0..9) → z (mm). a..e 는 +z, f..j 는 -z, 중앙 홈으로 분리 */
@@ -117,10 +122,10 @@ export function railZForStripe(rail: Rail): number {
   return z + (z > 0 ? 0.95 : -0.95);
 }
 
-/** 모든 홀 생성 (본체 300 + 레일 100 = 400 tie-point 급) */
-export function getHoles(): Hole[] {
+/** 모든 홀 생성 (본체 300 + 레일 100 = 400 tie-point 급, 기본=활성 빵판) */
+export function getHoles(bb: BreadboardDef = activeBreadboard()): Hole[] {
   const holes: Hole[] = [];
-  const cols = activeBreadboard().cols;
+  const cols = bb.cols;
 
   // 본체 a..j × 1..cols
   for (let col = 1; col <= cols; col++) {
@@ -130,7 +135,7 @@ export function getHoles(): Hole[] {
         kind: "main",
         col,
         row,
-        x: colX(col),
+        x: colX(col, bb),
         z: rowZ(idx),
       });
     });
@@ -146,7 +151,7 @@ export function getHoles(): Hole[] {
         kind: "rail",
         col,
         rail,
-        x: colX(col),
+        x: colX(col, bb),
         z,
       });
     }
@@ -155,26 +160,33 @@ export function getHoles(): Hole[] {
   return holes;
 }
 
-let _holeMap: Map<string, Hole> | null = null;
-/** id → Hole 조회 맵 (지연 생성·캐시) */
-export function getHoleMap(): Map<string, Hole> {
-  if (!_holeMap) {
-    _holeMap = new Map(getHoles().map((h) => [h.id, h]));
+/** id → Hole 맵 캐시 — 빵판 id별(레이아웃은 id당 불변이라 동시요청 안전). */
+const _holeMapCache = new Map<BreadboardId, Map<string, Hole>>();
+/** id → Hole 조회 맵 (지연 생성·id별 캐시, 기본=활성 빵판) */
+export function getHoleMap(bb: BreadboardDef = activeBreadboard()): Map<string, Hole> {
+  let m = _holeMapCache.get(bb.id);
+  if (!m) {
+    m = new Map(getHoles(bb).map((h) => [h.id, h]));
+    _holeMapCache.set(bb.id, m);
   }
-  return _holeMap;
+  return m;
 }
 
-/** 본체 홀 id (row,col) 유효하면 반환, 아니면 null */
-export function mainHoleId(row: RowLetter, col: number): string | null {
-  if (col < 1 || col > activeBreadboard().cols) return null;
+/** 본체 홀 id (row,col) 유효하면 반환, 아니면 null (기본=활성 빵판) */
+export function mainHoleId(
+  row: RowLetter,
+  col: number,
+  bb: BreadboardDef = activeBreadboard(),
+): string | null {
+  if (col < 1 || col > bb.cols) return null;
   return `${row}${col}`;
 }
 
-/** 빵판 외곽 치수 (mm) — 홀 분포 + 여백에서 산출 */
-export function boardDimensions() {
+/** 빵판 외곽 치수 (mm) — 홀 분포 + 여백에서 산출 (기본=활성 빵판) */
+export function boardDimensions(bb: BreadboardDef = activeBreadboard()) {
   const margin = 3.2;
   const halfWidthZ = railZ("T-") + margin; // 가장 바깥 레일 + 여백
-  const halfLengthX = colX(activeBreadboard().cols) + margin;
+  const halfLengthX = colX(bb.cols, bb) + margin;
   return {
     length: halfLengthX * 2, // x
     width: halfWidthZ * 2, // z

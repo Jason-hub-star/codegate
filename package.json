@@ -8,10 +8,15 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "mcp:build": "node server/build.mjs",
+    "mcp:start": "node dist/mcp.mjs",
+    "mcp:dev": "node server/build.mjs && node dist/mcp.mjs",
+    "mcp:smoke": "node server/build.mjs && node server/smoke.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.21.0",
@@ -31,6 +36,7 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.184.1",
     "@types/w3c-web-serial": "^1.0.8",
+    "esbuild": "^0.28.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
