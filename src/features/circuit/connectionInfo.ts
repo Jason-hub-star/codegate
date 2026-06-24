@@ -83,8 +83,17 @@ const compactPartLabel = (label: string): string =>
   label.replace(/\s*\(.+\)\s*$/, "").replace(" 모터", "");
 
 const partTerminalLabel = (t: PartTerminal): EndpointInfo => {
-  const role = roleLabel(t.pin.role);
   const name = compactPartLabel(t.def.label);
+  // 릴레이 접점(switch) 등 role 라벨이 무의미한 핀은 핀 라벨(COM/NO/NC)을 그대로 쓴다
+  if (t.pin.role === "switch") {
+    return {
+      id: t.endpoint,
+      label: `${t.def.label} ${t.pin.label}`,
+      shortLabel: `${name} ${t.pin.label}`,
+      role: t.pin.label,
+    };
+  }
+  const role = roleLabel(t.pin.role);
   return {
     id: t.endpoint,
     label: `${t.def.label} ${t.pin.label} (${role})`,

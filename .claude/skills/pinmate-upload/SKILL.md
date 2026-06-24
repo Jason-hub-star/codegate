@@ -23,12 +23,19 @@ codegen(`buildSketch`)이 뽑은 `.ino`나 손수정본을 **실물 보드에서
 - 보드가 USB로 연결돼 있을 것. 클론보드(CH340)는 macOS 드라이버 선설치 필요.
 
 ## 절차
-1. **보드 감지** — FQBN·포트를 사람이 추측하지 말고 CLI로 확정:
+1. **보드 감지 + 정체 확인** — FQBN·포트를 사람이 추측하지 말고 CLI로 확정:
    ```bash
    arduino-cli board list
    ```
    USB 행에서 `Board Name`·`FQBN`·`포트`를 읽는다(예: Arduino UNO / `arduino:avr:uno` / `/dev/cu.usbmodem1101`).
-   보드가 안 보이면(USB 포트만 `Unknown`) **연결/케이블/드라이버** 문제 → 사용자에게 알리고 중단.
+   - **★ `Board Name`이 `Unknown`이면 무작정 FQBN을 찍지 말고 VID/PID로 정체부터 확인**:
+     ```bash
+     arduino-cli board list --format json | grep -iE '"vid"|"pid"|"address"'
+     ```
+     `vid` 가 **`0x2341`(정품 Arduino)·`0x1A86`(CH340 클론)·`0x10C4`/`0x0403`(USB-시리얼)** 면 보드일 가능성.
+     **`0x04E8`(삼성)·`0x05AC`(애플) 등은 폰·주변기기 → 절대 업로드 금지**(`usbmodem...` 이름이 보드처럼 보여도 폰일 수 있음 — 실제로 갤럭시를 UNO로 착각해 쏠 뻔한 사례).
+   - 여러 `usbmodem*` 포트가 보이면 **VID로 진짜 보드를 골라** 그 포트로만 업로드.
+   - USB 포트 자체가 안 보이면 **연결/케이블/드라이버** 문제 → 사용자에게 알리고 중단.
 2. **스케치 폴더 규칙** — arduino-cli 는 **폴더명 == .ino 파일명**을 요구. repo 오염 방지로 `/tmp` 에:
    ```bash
    # /tmp/<name>/<name>.ino 형태로 Write
@@ -51,7 +58,8 @@ codegen(`buildSketch`)이 뽑은 `.ino`나 손수정본을 **실물 보드에서
 
 ## 규칙
 - 스케치는 `/tmp/<name>/` 에 — repo·src 에 .ino 만들지 않는다(칩 위 C++는 `src/` 금지, firmware 외).
-- FQBN·포트는 **`board list` 로 확정**하고 하드코딩하지 않는다(포트 번호는 재연결마다 바뀜).
+- FQBN·포트는 **`board list` 로 확정**하고 하드코딩하지 않는다(포트 번호·시리얼은 재연결마다 바뀜).
+- **`Unknown` 보드엔 VID/PID 확인 전 업로드 금지** — 폰·버즈 같은 비-아두이노 USB 기기에 펌웨어를 쏘면 안 된다(VID `0x2341`/`0x1A86` 등 아두이노 계열만). 동기 실패(`not in sync`)는 대개 "그 포트가 보드가 아님" 신호.
 - 업로드는 실물에 쓰는 비가역 작업 → 사용자가 명시 요청했을 때만. 코드 안전성(핀·전류) 먼저 확인.
 - `arduino-cli monitor` 는 비대화형 stdin EOF로 즉시 종료됨 → 시리얼 확인은 OS 직접 read
   (`stty -f <port> 9600 raw` 후 디바이스 read) 또는 앱 `/serial-test` WebSerial 로(DEC-037 참고).

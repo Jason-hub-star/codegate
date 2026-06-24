@@ -17,7 +17,26 @@ function wire(id: string, a: string, b: string): Wire {
   return { id, a, b };
 }
 
-/** 보드밖(free) 서보 인스턴스 — leads = [신호, VCC, GND] (def.pins 순서: pwm·power·gnd) */
+/** 보드밖(free) 부품 인스턴스 — leads 는 def.pins 순서대로 끝점(미연결=null). */
+function freePart(
+  uid: string,
+  defId: string,
+  leads: (string | null)[],
+  bodyPos: { x: number; z: number } = { x: 0, z: 70 },
+): PlacedPart {
+  return {
+    uid,
+    defId,
+    pinHoles: [],
+    orientation: 0,
+    anchorHoleId: "",
+    mount: "free",
+    bodyPos,
+    leads,
+  };
+}
+
+/** 서보(free) — leads = [신호, VCC, GND] (def.pins 순서: pwm·power·gnd) */
 function servo(
   uid: string,
   signal: string | null,
@@ -25,16 +44,7 @@ function servo(
   gnd: string | null,
   bodyPos: { x: number; z: number } = { x: 0, z: 70 },
 ): PlacedPart {
-  return {
-    uid,
-    defId: "servo",
-    pinHoles: [],
-    orientation: 0,
-    anchorHoleId: "",
-    mount: "free",
-    bodyPos,
-    leads: [signal, vcc, gnd],
-  };
+  return freePart(uid, "servo", [signal, vcc, gnd], bodyPos);
 }
 
 export interface Scenario {
@@ -122,6 +132,41 @@ const servoButtonViaRails: CircuitModel = {
   ],
 };
 
+// 릴레이 leads 순서 = def.pins: [IN, VCC, GND, COM, NO, NC]
+/** 릴레이 정상 제어(free): IN→D8·VCC→5V·GND→GND. 부하측 미사용(COM/NO/NC=null). */
+const relayControl: CircuitModel = {
+  parts: [
+    freePart("relay1", "relay", ["AD_D8", "AD_5V", "AD_GND_P1", null, null, null]),
+  ],
+  wires: [],
+};
+
+/**
+ * 릴레이 + 펌프(둘 다 free): 아두이노가 릴레이를 제어하고, 펌프는 **릴레이 접점
+ * (COM→NO)을 통해** 외부전원 rail로 구동된다 — 릴레이가 펌프를 진짜 단속(net 접점 간선).
+ * 부하 회로: 5V→+rail→COM →[NO 접점]→ 15번 열 → 펌프 →−rail→GND. 공통 GND 필수.
+ * ★ 아두이노 5V/GND 핀은 **하나뿐** → 레일에 한 번만 먹이고(w1·w2), 릴레이 VCC/GND·COM·
+ *   펌프는 모두 **레일/홀을 탭**한다(한 핀·한 홀=리드 하나, 실물 빵판 그대로).
+ *   NO와 펌프+는 같은 15번 열의 다른 홀(e15·d15)에서 tie-point로 이어진다.
+ */
+const relayPumpExternal: CircuitModel = {
+  parts: [
+    // IN→D8, VCC/GND→레일 탭(T+_5/T-_5), COM→+rail(T+_3), NO→15번 열(e15). NC 미사용.
+    freePart(
+      "relay1",
+      "relay",
+      ["AD_D8", "T+_5", "T-_5", "T+_3", "e15", null],
+      { x: -20, z: 70 },
+    ),
+    // 펌프+ → 같은 15번 열의 다른 홀(d15, NO와 tie-point로 연결), −→−rail
+    freePart("pump1", "pump", ["d15", "T-_3"], { x: 25, z: 70 }),
+  ],
+  wires: [
+    wire("w1", "AD_5V", "T+_1"), // 아두이노 5V → + rail (한 번만)
+    wire("w2", "AD_GND_P1", "T-_1"), // 아두이노 GND → − rail (한 번만, 공통 GND)
+  ],
+};
+
 export const SCENARIOS: Record<string, Scenario> = {
   ledCorrect: {
     id: "ledCorrect",
@@ -195,5 +240,18 @@ export const SCENARIOS: Record<string, Scenario> = {
     description:
       "아두이노 5V/GND가 빵판 rail을 먹이고, 서보는 D9(PWM), 버튼은 D2↔GND로 연결",
     model: servoButtonViaRails,
+  },
+  relayControl: {
+    id: "relayControl",
+    label: "릴레이 제어",
+    description: "디지털핀(D8)→IN·VCC→5V·GND→GND로 릴레이를 ON/OFF 제어",
+    model: relayControl,
+  },
+  relayPumpExternal: {
+    id: "relayPumpExternal",
+    label: "릴레이 + 펌프(외부전원)",
+    description:
+      "릴레이는 아두이노가 제어하고, 펌프는 외부전원 rail로 구동 — 핀 직결 금지·공통 GND",
+    model: relayPumpExternal,
   },
 };

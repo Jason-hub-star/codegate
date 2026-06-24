@@ -1,7 +1,14 @@
 /** 회로 논리 모델 — 순수 도메인. 3D·React·LLM 의존 0. M3 net/diagnose 가 소비. */
 
 /** 부품 핀 역할 (DEC-022 일반화: 거의 모든 센서 = VCC/GND/signal) */
-export type PinRole = "power" | "gnd" | "digital" | "analog" | "pwm" | "signal";
+export type PinRole =
+  | "power"
+  | "gnd"
+  | "digital"
+  | "analog"
+  | "pwm"
+  | "signal"
+  | "switch"; // 릴레이 부하측 접점(COM/NO/NC)
 
 /** 동작 전압 — 시중 부품 1:1 매칭 (DEC-027, research/16) */
 export type OperatingV = "5V" | "3.3V" | "5V/3.3V";
@@ -84,6 +91,14 @@ export interface PartDef extends CatalogItem {
    * net/진단은 partEndpoints() 로 단일 처리(DEC: 보드밖 부품).
    */
   mount?: "board" | "free";
+  /**
+   * 릴레이형 스위칭 접점 (pins 인덱스). 코일(제어 IN/VCC/GND)이 부하측 접점을 단속:
+   * 여자(ON)=COM↔NO 도통, 휴지(OFF)=COM↔NC 도통. net.ts 가 이를 **간선**(병합 X)으로
+   * 깔아 부하 회로가 접점을 통해 완결된다(거짓 단락 없음).
+   * ⚠️ 정적 모델 한계: 펌웨어를 안 돌리므로 "지금 ON/OFF"는 모름 → 두 접점 경로를 모두
+   *   깔아 배선 구조를 검증한다. 실시간 딸깍은 WebSerial 디지털 트윈(DEC-037) 영역.
+   */
+  relay?: { com: number; no: number; nc: number };
 }
 
 /** 빵판에 배치된 부품 인스턴스 */

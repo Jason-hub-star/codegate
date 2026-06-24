@@ -8,6 +8,8 @@ const EXAMPLES = [
   "ledReversed",
   "shortCircuit",
   "servoButtonViaRails",
+  "relayControl",
+  "relayPumpExternal",
 ] as const;
 
 /** 예제 탭 — 프리셋 회로 불러오기. */

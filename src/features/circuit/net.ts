@@ -17,6 +17,8 @@ export interface PartEdge {
   v: string;
   pinA: number;
   pinB: number;
+  /** 릴레이 접점 간선 — 'no'(여자 시 도통)·'nc'(휴지 시 도통). 부하 회로가 접점 경유 완결. */
+  relay?: "no" | "nc";
 }
 
 export interface NetGraph {
@@ -95,6 +97,34 @@ export function buildNet(model: CircuitModel): NetGraph {
         v: find(nj),
         pinA: i,
         pinB: j,
+      });
+    }
+  }
+
+  // 릴레이 접점 → 간선(병합 X). COM↔NO(여자)·COM↔NC(휴지) 둘 다 깔아 부하 회로가
+  // 접점을 통해 완결되게 한다(단락 판정은 union 기반이라 거짓 단락 없음).
+  for (const p of model.parts) {
+    const def = PARTS[p.defId];
+    if (!def?.relay) continue;
+    const eps = partEndpoints(p);
+    const nCom = eps[def.relay.com] ? nodeOfRaw(eps[def.relay.com]!) : null;
+    if (!nCom) continue;
+    for (const [pinIdx, contact] of [
+      [def.relay.no, "no"],
+      [def.relay.nc, "nc"],
+    ] as const) {
+      const ep = eps[pinIdx];
+      const n = ep ? nodeOfRaw(ep) : null;
+      if (!n) continue; // 접점 미연결 → 간선 없음
+      edges.push({
+        uid: p.uid,
+        defId: p.defId,
+        isResistor: false,
+        u: find(nCom),
+        v: find(n),
+        pinA: def.relay.com,
+        pinB: pinIdx,
+        relay: contact,
       });
     }
   }

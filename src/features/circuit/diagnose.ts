@@ -243,6 +243,63 @@ export function diagnose(model: CircuitModel): Verdict {
     }
   }
 
+  // ── 릴레이 정밀 진단: 제어 IN→디지털핀 · VCC→전원 · GND→접지 ──
+  // 부하측(COM/NO/NC)은 net 접점 간선으로 회로가 완결됨. 정적 모델이라 "지금 ON/OFF"는
+  // 진단 안 함(실시간은 WebSerial 트윈 DEC-037) — 여기선 제어 배선 정확도만 본다.
+  for (const p of model.parts) {
+    const def = PARTS[p.defId];
+    if (!def?.relay) continue;
+    if (conflictUids.has(p.uid)) continue;
+    const eps = partEndpoints(p);
+    const nodeForRole = (role: string): string | null => {
+      const idx = def.pins.findIndex((pin) => pin.role === role);
+      const ep = idx >= 0 ? eps[idx] : null;
+      return ep ? net.nodeOfHole(ep) : null;
+    };
+    const inn = nodeForRole("signal"); // IN
+    const vcc = nodeForRole("power");
+    const gnd = nodeForRole("gnd");
+
+    if (!inn && !vcc && !gnd) {
+      findings.push({
+        type: "missing_power_ground",
+        severity: "medium",
+        message: `${def.label} 제어측이 아두이노 핀에 연결되지 않았어요.`,
+        partUid: p.uid,
+        partLabel: def.label,
+        misconception: "circuit_loop",
+      });
+      continue;
+    }
+    if (!inn || !net.reach(inn, inputPinNodes)) {
+      findings.push({
+        type: "open_circuit",
+        severity: "medium",
+        message: `${def.label} IN을 아두이노 디지털핀에 연결해야 ON/OFF 제어가 돼요.`,
+        partUid: p.uid,
+        partLabel: def.label,
+      });
+    }
+    if (!vcc || !net.reach(vcc, supplyNodes)) {
+      findings.push({
+        type: "missing_power_ground",
+        severity: "medium",
+        message: `${def.label} VCC가 전원(5V)에 연결되지 않았어요.`,
+        partUid: p.uid,
+        partLabel: def.label,
+      });
+    }
+    if (!gnd || !net.reach(gnd, G)) {
+      findings.push({
+        type: "missing_power_ground",
+        severity: "medium",
+        message: `${def.label} GND가 접지(GND)에 연결되지 않았어요.`,
+        partUid: p.uid,
+        partLabel: def.label,
+      });
+    }
+  }
+
   // ── 버튼 정밀 진단 (DEC-039): 입력핀(디지털/아날로그) + 기준(GND/전원) 필요 ──
   // 풀업은 펌웨어(INPUT_PULLUP)로 대체 가능 → 배선만으론 단정 불가하므로 진단하지 않음.
   for (const p of model.parts) {

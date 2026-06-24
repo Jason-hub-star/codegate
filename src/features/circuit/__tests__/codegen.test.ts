@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildSketch } from "../codegen";
+import { SCENARIOS } from "../scenarios";
 import { placePart, placeFreePart, withLead } from "../parts";
 import type { CircuitModel, PlacedPart, Wire } from "../types";
 
@@ -80,25 +81,32 @@ describe("buildSketch — 결정론 코드 추천 (Phase A)", () => {
     expect(notes.some((n) => n.includes("LED"))).toBe(true);
   });
 
-  it("릴레이 IN→D8 → 디지털 출력 토글 (쇼케이스: 펌프 제어)", () => {
-    const relay = must(placePart("relay", "e5", 0)); // IN=e5, VCC=e6, GND=e7
-    const m = model(
-      [relay],
-      [
-        wire("w1", "AD_D8", "e5"),
-        wire("w2", "AD_5V", "e6"),
-        wire("w3", "e7", "AD_GND_P1"),
-      ],
-    );
-    const { code } = buildSketch(m);
+  it("릴레이(free) IN→D8 → 디지털 출력 토글 (쇼케이스: 펌프 제어)", () => {
+    let relay = must(placeFreePart("relay", { x: 0, z: -40 })); // IN/VCC/GND 리드
+    relay = withLead(relay, 0, "AD_D8"); // IN(lead0) → D8
+    const { code } = buildSketch(model([relay]));
     expect(code).toContain("const int relayPin = 8;");
     expect(code).toContain("pinMode(relayPin, OUTPUT);");
     expect(code).toContain("digitalWrite(relayPin, HIGH);");
   });
 
-  it("워터펌프(미연결) → 코드 제외 + notes 안내", () => {
-    const pump = must(placePart("pump", "e5", 0));
+  it("워터펌프(free, 미연결) → 코드 제외 + notes 안내", () => {
+    const pump = must(placeFreePart("pump", { x: 0, z: -40 })); // leads 미연결
     const { notes } = buildSketch(model([pump]));
+    expect(notes.some((n) => n.includes("워터펌프"))).toBe(true);
+  });
+
+  it("예제 시나리오 relayControl → 릴레이 D8 디지털 출력 토글", () => {
+    const { code } = buildSketch(SCENARIOS.relayControl.model);
+    expect(code).toContain("const int relayPin = 8;");
+    expect(code).toContain("pinMode(relayPin, OUTPUT);");
+    expect(code).toContain("digitalWrite(relayPin, HIGH);");
+  });
+
+  it("예제 시나리오 relayPumpExternal → 릴레이는 코드화, 펌프는 notes 안내", () => {
+    const { code, notes } = buildSketch(SCENARIOS.relayPumpExternal.model);
+    expect(code).toContain("const int relayPin = 8;");
+    // 펌프는 아두이노 제어핀에 직결 안 됨 → notes 로 안내(코드 변수 없음)
     expect(notes.some((n) => n.includes("워터펌프"))).toBe(true);
   });
 

@@ -117,6 +117,34 @@ describe("diagnose — 결정론 규칙 엔진", () => {
     expect(f?.message).toContain("PWM");
   });
 
+  it("릴레이 제어 정상: IN→D8·VCC→5V·GND→GND → 오류 없음", () => {
+    const v = diagnose(SCENARIOS.relayControl.model);
+    expect(v.ok).toBe(true);
+    expect(v.findings).toHaveLength(0);
+  });
+
+  it("릴레이+펌프(접점 경유): 거짓 단락 없음, 부하 회로 완결 → 오류 없음", () => {
+    const v = diagnose(SCENARIOS.relayPumpExternal.model);
+    expect(v.findings.some((f) => f.type === "short_circuit")).toBe(false);
+    expect(v.ok).toBe(true);
+  });
+
+  it("릴레이 IN 미연결: open_circuit (제어 안내)", () => {
+    const base = SCENARIOS.relayControl.model;
+    const noIn: typeof base = {
+      ...base,
+      // IN(lead0)만 끊고 VCC/GND 유지
+      parts: base.parts.map((p) => ({
+        ...p,
+        leads: [null, "AD_5V", "AD_GND_P1", null, null, null],
+      })),
+    };
+    const v = diagnose(noIn);
+    const f = v.findings.find((x) => x.type === "open_circuit");
+    expect(f).toBeDefined();
+    expect(f?.message).toContain("IN");
+  });
+
   it("free 본체 회전(rot)·이동(bodyPos)은 진단에 무영향 (geometry-only)", () => {
     const base = SCENARIOS.servoCorrect.model;
     const moved: typeof base = {

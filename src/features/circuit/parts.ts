@@ -235,24 +235,31 @@ export const PARTS: Record<string, PartDef> = {
     label: "릴레이 1채널",
     category: "output",
     status: "ready",
+    mount: "free", // 모듈은 보드 밖, 제어 3선 + 부하 3단자를 점퍼로 연결(서보처럼)
     render: { kind: "procedural", builder: "relay" },
+    // 제어측(IN/VCC/GND) + 부하측 접점(COM/NO/NC). 인덱스 0~5.
     pins: [
-      { role: "signal", label: "IN" },
-      { role: "power", label: "VCC" },
-      { role: "gnd", label: "GND" },
+      { role: "signal", label: "IN" }, // 0 제어 신호
+      { role: "power", label: "VCC" }, // 1 모듈 전원
+      { role: "gnd", label: "GND" }, // 2 접지
+      { role: "switch", label: "COM" }, // 3 부하 공통
+      { role: "switch", label: "NO" }, // 4 상시개방(ON=연결)
+      { role: "switch", label: "NC" }, // 5 상시폐쇄(OFF=연결)
     ],
     span: 1,
-    conducts: [],
+    conducts: [], // 도통은 relay 접점(net.ts가 COM↔NO/NC 간선화)으로 표현
+    relay: { com: 3, no: 4, nc: 5 },
     operatingV: "5V",
     protocol: "onoff",
     description:
-      "IN에 HIGH/LOW로 부하를 ON/OFF. 펌프·모터 등 큰 전류는 외부전원+공통 GND로 스위칭. 모듈에 따라 active-low(LOW=ON)도 있어요.",
+      "코일(IN/VCC/GND)이 부하측 접점을 단속: 여자=COM-NO 연결. 부하(펌프·모터)는 COM·NO로 외부전원과 스위칭하고 공통 GND로 묶어요. 모듈에 따라 active-low(LOW=ON)도 있어요.",
   },
   pump: {
     id: "pump",
     label: "워터펌프",
     category: "output",
     status: "ready",
+    mount: "free", // 펌프는 보드 밖, +/− 2선을 외부전원·릴레이로 연결(서보처럼)
     render: { kind: "procedural", builder: "pump" },
     pins: [
       { role: "signal", label: "+" },
