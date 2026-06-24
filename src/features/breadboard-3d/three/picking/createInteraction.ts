@@ -8,14 +8,16 @@ import {
   PARTS,
   PITCH,
   boardRefLabel,
+  connectionIdForLead,
   computePinHoles,
   partEndpoints,
+  parseLeadConnectionId,
   freeBodyPos,
   type PlacedPart,
   type Verdict,
 } from "@/features/circuit";
 import { holeWorldPos } from "../snap";
-import { buildWire, WIRE_COLOR } from "../wire";
+import { buildWire } from "../wire";
 import { buildPartMesh } from "../parts";
 import { TOKEN } from "../theme3d";
 import { setLedDomeState, visualStateFromVerdict } from "../visualState";
@@ -35,6 +37,13 @@ import {
   polarityMarker,
   addOutline,
 } from "./decor";
+import {
+  createEndpointRingsAt,
+  createEndpointRings,
+  decorateConnectionMesh,
+  syncWireMeshes,
+} from "./wireSelection";
+import { clearSpriteLabels, syncDebugLabels } from "./debugLabels";
 
 export function createInteraction(opts: Opts): InteractionHandle {
   const { scene, camera, dom, holeMesh, holes, pinMesh, pins } = opts;
@@ -84,8 +93,14 @@ export function createInteraction(opts: Opts): InteractionHandle {
   let calibratePin = 0;
   let lastParts: PlacedPart[] = []; // 리드 링 위치 계산용(최근 동기화 스냅)
   let lastSelectedUid: string | null = null;
+  let lastSelectedWireId: string | null = null;
+  let hoveredWireId: string | null = null;
   let lastWires: { id: string; a: string; b: string }[] = [];
   let lastVerdict: Verdict | null = null;
+  const connectionEndpoints = new Map<
+    string,
+    { a: THREE.Vector3; b: THREE.Vector3 }
+  >();
 
   // 그룹
   const wiresGroup = new THREE.Group();
@@ -97,7 +112,19 @@ export function createInteraction(opts: Opts): InteractionHandle {
   // 3D 플로팅 이름표(클릭=객체 선택). 깊이검사 off·상시 표시 → 클릭 충돌 없이 선택.
   const labelsGroup = new THREE.Group();
   labelsGroup.name = "labels";
-  scene.add(wiresGroup, partsGroup, ghostGroup, labelsGroup);
+  // 선택/hover 디버그 라벨(핀 역할·선 의미). 이름표 토글과 분리해 필요한 때만 표시.
+  const debugLabelsGroup = new THREE.Group();
+  debugLabelsGroup.name = "debug-labels";
+  const wireSelectionGroup = new THREE.Group();
+  wireSelectionGroup.name = "wire-selection";
+  scene.add(
+    wiresGroup,
+    partsGroup,
+    ghostGroup,
+    labelsGroup,
+    debugLabelsGroup,
+    wireSelectionGroup,
+  );
 
   // 인디케이터 (호버=앰버 링, 펜딩=초록 링)
   const ringGeo = new THREE.TorusGeometry(1.7, 0.35, 8, 20);
@@ -243,6 +270,54 @@ export function createInteraction(opts: Opts): InteractionHandle {
       }
     }
     return null;
+  };
+
+  const pickConnectionId = (): string | null => {
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(
+      [...wiresGroup.children, ...partsGroup.children],
+      true,
+    );
+    for (const h of hits) {
+      let o: THREE.Object3D | null = h.object;
+      while (o) {
+        if (o.userData?.wireId) return o.userData.wireId as string;
+        o = o.parent;
+      }
+    }
+    return null;
+  };
+
+  const updateDebugLabels = (hoverId: string | null = hoveredWireId) =>
+    syncDebugLabels({
+      group: debugLabelsGroup,
+      parts: lastParts,
+      wires: lastWires,
+      selectedPartUid: lastSelectedUid,
+      selectedWireId: lastSelectedWireId,
+      hoveredWireId: hoverId,
+      endpointPos,
+      connectionMidpoint: (id) => {
+        const endpoints = connectionEndpoints.get(id);
+        if (!endpoints) return null;
+        const mid = endpoints.a.clone().add(endpoints.b).multiplyScalar(0.5);
+        mid.y = Math.max(endpoints.a.y, endpoints.b.y) + 8;
+        return mid;
+      },
+      breadboardMatrix: bbMatrix,
+    });
+
+  const updateWireSelectionRings = () => {
+    clearGroup(wireSelectionGroup);
+    if (!lastSelectedWireId) return;
+    const wire = lastWires.find((w) => w.id === lastSelectedWireId);
+    const endpoints = connectionEndpoints.get(lastSelectedWireId);
+    const rings = endpoints
+      ? createEndpointRingsAt(endpoints.a, endpoints.b)
+      : wire
+        ? createEndpointRings(wire, endpointPos)
+        : null;
+    if (rings) wireSelectionGroup.add(rings);
   };
 
   // 특정 부품 본체 표면의 클릭 월드좌표(리드 보정용). 마커가 가려도 뒤 본체 hit 채택.
@@ -415,12 +490,36 @@ export function createInteraction(opts: Opts): InteractionHandle {
       dom.style.cursor = "pointer";
       return;
     }
-    // 비배치 모드: 부품 본체 위면 선택 호버(홀 링 숨김), 그 외엔 홀 호버.
-    // onUp 의 클릭 우선순위(부품 > 홀)와 호버를 일치시킨다.
-    if (pickPartUid()) {
+    const wireId = pickConnectionId();
+    if (wireId) {
       setRing(hoverRing, null);
+      if (hoveredWireId !== wireId) {
+        hoveredWireId = wireId;
+        syncWires(lastWires, lastSelectedWireId);
+      } else {
+        updateDebugLabels(wireId);
+      }
       dom.style.cursor = "pointer";
       return;
+    }
+    // 비배치 모드: 부품 본체 위면 선택 호버(홀 링 숨김), 그 외엔 홀 호버.
+    // onUp 의 클릭 우선순위(연결 > 부품 > 홀)와 호버를 일치시킨다.
+    if (pickPartUid()) {
+      setRing(hoverRing, null);
+      if (hoveredWireId) {
+        hoveredWireId = null;
+        syncWires(lastWires, lastSelectedWireId);
+      } else {
+        updateDebugLabels(null);
+      }
+      dom.style.cursor = "pointer";
+      return;
+    }
+    if (hoveredWireId) {
+      hoveredWireId = null;
+      syncWires(lastWires, lastSelectedWireId);
+    } else {
+      updateDebugLabels(null);
     }
     const id = pickHole();
     setRing(hoverRing, id);
@@ -491,6 +590,7 @@ export function createInteraction(opts: Opts): InteractionHandle {
         pendingHoleId = null;
         setRing(pendingRing, null);
       }
+      cb.onSelectWire?.(null);
       if (lbl.kind === "board") cb.onSelectBoard?.(lbl.which);
       else cb.onSelectPart?.(lbl.uid);
       return;
@@ -518,18 +618,32 @@ export function createInteraction(opts: Opts): InteractionHandle {
       return;
     }
 
-    // 3) 부품 본체 직격이면 선택을 우선한다(평면 스냅이 홀을 삼키기 전에).
+    // 3) 연결 클릭 → 점퍼선/리드선 선택(의미 라벨/우측 정보)
+    const wireId = pickConnectionId();
+    if (wireId) {
+      if (pendingHoleId) {
+        pendingHoleId = null;
+        setRing(pendingRing, null);
+      }
+      cb.onSelectPart?.(null);
+      cb.onSelectBoard?.(null);
+      cb.onSelectWire?.(wireId);
+      return;
+    }
+
+    // 4) 부품 본체 직격이면 선택을 우선한다(평면 스냅이 홀을 삼키기 전에).
     const uid = pickPartUid();
     if (uid) {
       if (pendingHoleId) {
         pendingHoleId = null;
         setRing(pendingRing, null);
       }
+      cb.onSelectWire?.(null);
       cb.onSelectPart?.(uid);
       return;
     }
 
-    // 4) 홀/핀 → 배선 상태머신
+    // 5) 홀/핀 → 배선 상태머신
     if (holeId) {
       if (!pendingHoleId) {
         pendingHoleId = holeId;
@@ -545,10 +659,11 @@ export function createInteraction(opts: Opts): InteractionHandle {
       return;
     }
 
-    // 5) 보드 본체 클릭(홀 없는 영역) → 보드 선택
+    // 6) 보드 본체 클릭(홀 없는 영역) → 보드 선택
     const board = pickBoard();
     if (board) {
       cb.onSelectBoard?.(board);
+      cb.onSelectWire?.(null);
       if (pendingHoleId) {
         pendingHoleId = null;
         setRing(pendingRing, null);
@@ -556,9 +671,10 @@ export function createInteraction(opts: Opts): InteractionHandle {
       return;
     }
 
-    // 6) 빈 곳 → 선택 해제 + 펜딩 취소
+    // 7) 빈 곳 → 선택 해제 + 펜딩 취소
     cb.onSelectPart?.(null);
     cb.onSelectBoard?.(null);
+    cb.onSelectWire?.(null);
     if (pendingHoleId) {
       pendingHoleId = null;
       setRing(pendingRing, null);
@@ -609,19 +725,28 @@ export function createInteraction(opts: Opts): InteractionHandle {
     }
   };
 
-  const syncWires = (wires: { id: string; a: string; b: string }[]) => {
-    lastWires = wires;
-    clearGroup(wiresGroup);
-    for (const w of wires) {
-      const pa = endpointPos(w.a);
-      const pb = endpointPos(w.b);
-      if (!pa || !pb) continue;
-      const color =
-        wireColorFor(w.a) !== WIRE_COLOR.neutral
-          ? wireColorFor(w.a)
-          : wireColorFor(w.b);
-      wiresGroup.add(buildWire(pa, pb, color));
+  const syncWires = (
+    wires: { id: string; a: string; b: string }[],
+    selectedWireId: string | null = lastSelectedWireId,
+  ) => {
+    for (const id of [...connectionEndpoints.keys()]) {
+      if (!parseLeadConnectionId(id)) connectionEndpoints.delete(id);
     }
+    lastWires = wires;
+    lastSelectedWireId = selectedWireId;
+    clearGroup(wiresGroup);
+    syncWireMeshes({
+      wires,
+      group: wiresGroup,
+      selectedWireId: lastSelectedWireId,
+      hoveredWireId,
+      endpointPos,
+      wireColorFor,
+      onConnection: (id, a, b) => connectionEndpoints.set(id, { a, b }),
+    });
+    updateWireSelectionRings();
+    updateDebugLabels();
+    if (lastParts.length) syncParts(lastParts, lastSelectedUid);
   };
 
   const stampUid = (obj: THREE.Object3D, uid: string) => {
@@ -638,6 +763,7 @@ export function createInteraction(opts: Opts): InteractionHandle {
     load = true,
     rot: 0 | 1 | 2 | 3 = 0,
     anchors?: ([number, number, number] | null)[],
+    uid?: string,
   ): THREE.Group | null => {
     const def = PARTS[defId];
     if (!def) return null;
@@ -649,15 +775,38 @@ export function createInteraction(opts: Opts): InteractionHandle {
     if (!body) return null;
     const g = new THREE.Group();
     g.add(body);
+    const activeConnectionId = lastSelectedWireId ?? hoveredWireId;
     def.pins.forEach((pin, i) => {
+      const connectionId = uid ? connectionIdForLead(uid, i) : null;
+      const finalEndpoint = leads[i] ? endpointPos(leads[i]!) : null;
+      if (connectionId) {
+        connectionEndpoints.set(connectionId, {
+          a: lp[i].clone(),
+          b: (finalEndpoint ?? ends[i]).clone(),
+        });
+      }
       // 피그테일: 본체 커넥터 → 끝(암컷). 항상 표시. 홀에 꽂는 게 아니라 캡 없음.
-      g.add(buildWire(lp[i], ends[i], leadColor(pin.role), { capA: false, capB: false }));
+      const tail = buildWire(lp[i], ends[i], leadColor(pin.role), {
+        capA: false,
+        capB: false,
+        radius: connectionId === activeConnectionId ? 1.25 : 0.85,
+      });
+      if (connectionId) decorateConnectionMesh(tail, connectionId, activeConnectionId);
+      g.add(tail);
       // 점퍼: 끝 → 연결된 홀/아두이노핀. 연결됐을 때만. 홀 쪽(b)에만 캡.
       const ep = leads[i];
       if (!ep) return;
-      const at = endpointPos(ep);
-      if (at)
-        g.add(buildWire(ends[i], at, leadColor(pin.role), { capA: false, capB: true }));
+      const at = finalEndpoint;
+      if (at) {
+        const jumper = buildWire(ends[i], at, leadColor(pin.role), {
+          capA: false,
+          capB: true,
+          radius: connectionId === activeConnectionId ? 1.25 : 0.85,
+        });
+        if (connectionId)
+          decorateConnectionMesh(jumper, connectionId, activeConnectionId);
+        g.add(jumper);
+      }
     });
     return g;
   };
@@ -666,7 +815,15 @@ export function createInteraction(opts: Opts): InteractionHandle {
     const def = PARTS[p.defId];
     if (!def || !p.bodyPos) return;
     const eps = partEndpoints(p);
-    const g = buildFreeVisual(p.defId, p.bodyPos, eps, true, p.rot ?? 0, p.leadAnchors);
+    const g = buildFreeVisual(
+      p.defId,
+      p.bodyPos,
+      eps,
+      true,
+      p.rot ?? 0,
+      p.leadAnchors,
+      p.uid,
+    );
     if (!g) return;
     if (p.uid === selectedUid) addOutline(g);
     stampUid(g, p.uid);
@@ -697,6 +854,9 @@ export function createInteraction(opts: Opts): InteractionHandle {
   };
 
   const syncParts = (parts: PlacedPart[], selectedUid: string | null) => {
+    for (const id of [...connectionEndpoints.keys()]) {
+      if (parseLeadConnectionId(id)) connectionEndpoints.delete(id);
+    }
     lastParts = parts;
     lastSelectedUid = selectedUid;
     clearGroup(partsGroup);
@@ -723,6 +883,8 @@ export function createInteraction(opts: Opts): InteractionHandle {
     }
     showLeadRing(); // 재동기화 후 대기 링 위치 갱신
     syncLabels(); // 부품 목록 변동 → 이름표 갱신
+    updateWireSelectionRings();
+    updateDebugLabels();
   };
 
   const syncVisualState = (verdict: Verdict | null) => {
@@ -771,13 +933,17 @@ export function createInteraction(opts: Opts): InteractionHandle {
     window.removeEventListener("keydown", onKey);
     clearGroup(wiresGroup);
     clearGroup(partsGroup);
+    clearGroup(wireSelectionGroup);
     clearGhostMesh();
     clearLabels();
+    clearSpriteLabels(debugLabelsGroup);
     scene.remove(
       wiresGroup,
       partsGroup,
       ghostGroup,
       labelsGroup,
+      debugLabelsGroup,
+      wireSelectionGroup,
       hoverRing,
       pendingRing,
       ghostInvalidRing,

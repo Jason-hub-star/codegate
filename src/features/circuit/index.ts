@@ -92,6 +92,28 @@ export { encodeCircuit, decodeCircuit } from "./codec";
 export { recommendNextStep } from "./recommendation";
 export type { NextStep, StepPriority } from "./recommendation";
 
+export { buildSketch } from "./codegen";
+export type { SketchResult } from "./codegen";
+export {
+  connectionDebugId,
+  connectionIdForLead,
+  describePartConnection,
+  describeConnection,
+  describeWireConnection,
+  describeWire,
+  listConnections,
+  parseLeadConnectionId,
+  wireDebugLabel,
+  pinRoleDebugLabel,
+} from "./connectionInfo";
+export type {
+  ConnectionListItem,
+  EndpointInfo,
+  PartConnectionInfo,
+  PinConnectionInfo,
+  WireConnectionInfo,
+} from "./connectionInfo";
+
 export {
   SUPPLY_V,
   LED_VF,

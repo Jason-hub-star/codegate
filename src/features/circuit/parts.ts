@@ -228,6 +228,45 @@ export const PARTS: Record<string, PartDef> = {
     operatingV: "5V",
     description: "주소지정 RGB LED. 단일 데이터선(WS2812 800kHz 시리얼 신호)으로 다수 제어. DIN→DOUT 체인.",
   },
+
+  // ── 액추에이터(외부전원 구동) — DEC-027 고전류 부품 ──
+  relay: {
+    id: "relay",
+    label: "릴레이 1채널",
+    category: "output",
+    status: "ready",
+    render: { kind: "procedural", builder: "relay" },
+    pins: [
+      { role: "signal", label: "IN" },
+      { role: "power", label: "VCC" },
+      { role: "gnd", label: "GND" },
+    ],
+    span: 1,
+    conducts: [],
+    operatingV: "5V",
+    protocol: "onoff",
+    description:
+      "IN에 HIGH/LOW로 부하를 ON/OFF. 펌프·모터 등 큰 전류는 외부전원+공통 GND로 스위칭. 모듈에 따라 active-low(LOW=ON)도 있어요.",
+  },
+  pump: {
+    id: "pump",
+    label: "워터펌프",
+    category: "output",
+    status: "ready",
+    render: { kind: "procedural", builder: "pump" },
+    pins: [
+      { role: "signal", label: "+" },
+      { role: "gnd", label: "−" },
+    ],
+    polarity: true,
+    span: 2,
+    conducts: [[0, 1]],
+    operatingV: "5V",
+    protocol: "onoff",
+    currentMa: 500,
+    description:
+      "DC 워터펌프. 소비전류가 커서 아두이노 핀 직결 불가 — 릴레이/모터드라이버 + 외부전원으로 구동해요.",
+  },
 };
 
 export const PART_LIST: PartDef[] = Object.values(PARTS);

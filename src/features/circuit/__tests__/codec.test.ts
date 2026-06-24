@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { encodeCircuit, decodeCircuit } from "../codec";
 import { SCENARIOS } from "../scenarios";
 import { placeFreePart, withLead, setLeadAnchor } from "../parts";
+import { diagnose } from "../diagnose";
 import type { CircuitModel } from "../types";
 
 describe("codec — 회로 인코딩·디코딩", () => {
@@ -79,6 +80,23 @@ describe("codec — 회로 인코딩·디코딩", () => {
       [-1.32, 2.46, -17.36],
     ]);
     expect(decoded?.model).toEqual(original);
+  });
+
+  it("/view 복원: 서보+D9, 버튼+D2 rail 회로 라운드트립 후 진단 유지", () => {
+    const original = SCENARIOS.servoButtonViaRails.model;
+    const freeParts = original.parts.filter((p) => p.mount === "free");
+    expect(freeParts.length).toBeGreaterThan(0);
+    expect(freeParts.every((p) => !!p.bodyPos)).toBe(true);
+
+    const code = encodeCircuit(original, "half");
+    const decoded = decodeCircuit(code);
+    expect(decoded).not.toBeNull();
+    if (decoded) {
+      expect(decoded.model).toEqual(original);
+      expect(decoded.board).toBe("half");
+      expect(diagnose(decoded.model)).toEqual(diagnose(original));
+      expect(diagnose(decoded.model).ok).toBe(true);
+    }
   });
 
   it("빈 문자열 → null", () => {

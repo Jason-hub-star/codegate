@@ -45,6 +45,7 @@ export interface SceneProps {
   parts: PlacedPart[];
   selectedPartDef: string | null;
   selectedPartUid: string | null;
+  selectedWireId?: string | null;
   verdict: Verdict | null;
   orientation: 0 | 1;
   /** 빵판 배치(이동/회전) — 생략 시 기본 */
@@ -63,6 +64,7 @@ export interface SceneProps {
   onPlacePart: (anchorHoleId: string) => void;
   onPlaceFree?: (x: number, z: number) => void;
   onSelectPart: (uid: string | null) => void;
+  onSelectWire?: (id: string | null) => void;
   onCancel: () => void;
   onDelete: () => void;
   onUndo: () => void;
@@ -222,6 +224,7 @@ export function Scene(props: SceneProps) {
       onPlacePart: (h) => propsRef.current.onPlacePart(h),
       onPlaceFree: (x, z) => propsRef.current.onPlaceFree?.(x, z),
       onSelectPart: (u) => propsRef.current.onSelectPart(u),
+      onSelectWire: (id) => propsRef.current.onSelectWire?.(id),
       onCancel: () => propsRef.current.onCancel(),
       onDelete: () => propsRef.current.onDelete(),
       onUndo: () => propsRef.current.onUndo(),
@@ -256,8 +259,8 @@ export function Scene(props: SceneProps) {
 
   // 모델 동기화
   useEffect(() => {
-    interactionRef.current?.syncWires(props.wires);
-  }, [props.wires]);
+    interactionRef.current?.syncWires(props.wires, props.selectedWireId ?? null);
+  }, [props.wires, props.selectedWireId]);
 
   useEffect(() => {
     interactionRef.current?.syncParts(props.parts, props.selectedPartUid);

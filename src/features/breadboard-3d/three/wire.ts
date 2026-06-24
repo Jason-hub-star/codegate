@@ -21,7 +21,7 @@ export function buildWire(
   a: THREE.Vector3,
   b: THREE.Vector3,
   color: number = WIRE_COLOR.neutral,
-  opts?: { capA?: boolean; capB?: boolean },
+  opts?: { capA?: boolean; capB?: boolean; radius?: number },
 ): THREE.Mesh {
   const dist = a.distanceTo(b);
   const lift = Math.min(2 + dist * 0.22, 16); // 길수록 더 띄움, 상한
@@ -34,7 +34,7 @@ export function buildWire(
 
   const curve = new THREE.CatmullRomCurve3([a, c1, mid, c2, b]);
   const segs = Math.max(12, Math.round(dist));
-  const geo = new THREE.TubeGeometry(curve, segs, 0.85, 8, false);
+  const geo = new THREE.TubeGeometry(curve, segs, opts?.radius ?? 0.85, 8, false);
   const mat = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.45,

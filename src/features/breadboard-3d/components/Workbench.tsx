@@ -43,6 +43,7 @@ export function Workbench({ w, bench, verdict }: Props) {
             parts={w.parts}
             selectedPartDef={w.selectedPartDef}
             selectedPartUid={w.selectedPartUid}
+            selectedWireId={w.selectedWireId}
             verdict={verdict}
             orientation={w.orientation}
             breadboardPose={w.breadboardPose}
@@ -52,6 +53,7 @@ export function Workbench({ w, bench, verdict }: Props) {
             onPlacePart={w.placeAt}
             onPlaceFree={w.placeFreeAt}
             onSelectPart={w.selectPart}
+            onSelectWire={w.selectWire}
             onCancel={w.cancel}
             onDelete={w.deleteSelected}
             onUndo={w.undo}

@@ -102,6 +102,13 @@ describe("diagnose — 결정론 규칙 엔진", () => {
     expect(v.findings).toHaveLength(0);
   });
 
+  it("서보+D9, 버튼+D2: 5V/GND rail 경유 회로 → 오류 없음", () => {
+    const v = diagnose(SCENARIOS.servoButtonViaRails.model);
+    expect(v.ok).toBe(true);
+    expect(v.findings).toHaveLength(0);
+    expect(v.energizedRails).toEqual({ "T+": "power", "T-": "ground" });
+  });
+
   it("서보 오배선: 신호가 PWM 아닌 핀 → open_circuit + PWM 안내 (DEC-039)", () => {
     const v = diagnose(SCENARIOS.servoSignalNotPwm.model);
     expect(v.ok).toBe(false);

@@ -1,19 +1,21 @@
 "use client";
 
-import { type Verdict } from "@/features/circuit";
+import { type Verdict, type CircuitModel } from "@/features/circuit";
 import { VerdictBadge } from "../VerdictBadge";
 import { FindingItem } from "../FindingItem";
+import { CodeRecommendation } from "../CodeRecommendation";
 
 interface Props {
   verdict: Verdict | null;
+  model: CircuitModel;
   onDiagnose: () => void;
 }
 
 /**
- * 진단 탭 — 진단받기 + 결과(배지 + 문제목록).
+ * 진단 탭 — 진단받기 + 결과(배지 + 문제목록) + 추천 코드(Phase A).
  * M4: 선택 부품 인스펙터(PartInspector) · AI 설명(TutorThread) 섹션을 여기 붙인다.
  */
-export function DiagnoseTab({ verdict, onDiagnose }: Props) {
+export function DiagnoseTab({ verdict, model, onDiagnose }: Props) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <button
@@ -24,7 +26,7 @@ export function DiagnoseTab({ verdict, onDiagnose }: Props) {
         진단받기
       </button>
 
-      <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
+      <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto">
         {!verdict ? (
           <p className="text-xs text-muted-foreground">
             회로를 만들고 “진단받기”를 누르면 결정론 엔진이 정·오류를 판정해요.
@@ -42,6 +44,8 @@ export function DiagnoseTab({ verdict, onDiagnose }: Props) {
             )}
           </div>
         )}
+
+        {model.parts.length > 0 && <CodeRecommendation model={model} />}
       </div>
     </div>
   );

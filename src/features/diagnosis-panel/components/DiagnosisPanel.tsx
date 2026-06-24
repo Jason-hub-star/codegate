@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { DiagnoseTab } from "./tabs/DiagnoseTab";
 import { ExamplesTab } from "./tabs/ExamplesTab";
 import { BomTab } from "./tabs/BomTab";
+import { SelectionInfo } from "./SelectionInfo";
+import { ConnectionList } from "./ConnectionList";
 
 type TabKey = "diagnose" | "bom" | "console" | "examples";
 
@@ -58,11 +60,15 @@ export function DiagnosisPanel({ w, liveVerdict }: Props) {
         ))}
       </div>
 
+      <SelectionInfo w={w} />
+      <ConnectionList w={w} />
+
       {/* 탭 내용 */}
       <div className="mt-3 flex min-h-0 flex-1 flex-col">
         {tab === "diagnose" && (
           <DiagnoseTab
             verdict={verdict}
+            model={w.model}
             onDiagnose={() => setVerdict(liveVerdict)}
           />
         )}

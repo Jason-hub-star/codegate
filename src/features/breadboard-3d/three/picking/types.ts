@@ -12,6 +12,7 @@ export interface InteractionCallbacks {
   /** free 부품을 빵판 로컬 좌표(x,z)에 소환/이동 */
   onPlaceFree?: (x: number, z: number) => void;
   onSelectPart?: (uid: string | null) => void;
+  onSelectWire?: (id: string | null) => void;
   onCancel?: () => void;
   onDelete?: () => void;
   onUndo?: () => void;
@@ -37,7 +38,10 @@ export interface InteractionHandle {
   setSelectedPartDef: (defId: string | null) => void;
   setOrientation: (orientation: 0 | 1) => void;
   setCallbacks: (cb: InteractionCallbacks) => void;
-  syncWires: (wires: { id: string; a: string; b: string }[]) => void;
+  syncWires: (
+    wires: { id: string; a: string; b: string }[],
+    selectedWireId?: string | null,
+  ) => void;
   syncParts: (parts: PlacedPart[], selectedUid: string | null) => void;
   syncVisualState: (verdict: Verdict | null) => void;
   /** 빵판·아두이노 pose 변경 시 world 행렬 갱신 + 배선·부품 재동기화 */

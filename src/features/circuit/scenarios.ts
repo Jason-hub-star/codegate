@@ -23,6 +23,7 @@ function servo(
   signal: string | null,
   vcc: string | null,
   gnd: string | null,
+  bodyPos: { x: number; z: number } = { x: 0, z: 70 },
 ): PlacedPart {
   return {
     uid,
@@ -31,6 +32,7 @@ function servo(
     orientation: 0,
     anchorHoleId: "",
     mount: "free",
+    bodyPos,
     leads: [signal, vcc, gnd],
   };
 }
@@ -105,6 +107,21 @@ const servoSignalNotPwm: CircuitModel = {
   wires: [],
 };
 
+/** 서보+D9, 버튼+D2: 아두이노가 빵판 rail을 먹이고 서보/버튼이 그 rail을 공유 */
+const servoButtonViaRails: CircuitModel = {
+  parts: [
+    servo("servo1", "e10", "T+_5", "T-_5"),
+    part("btn1", "button", "e20"),
+  ],
+  wires: [
+    wire("w1", "AD_5V", "T+_1"),
+    wire("w2", "AD_GND_P1", "T-_1"),
+    wire("w3", "AD_D9", "a10"),
+    wire("w4", "AD_D2", "a20"),
+    wire("w5", "a22", "T-_10"),
+  ],
+};
+
 export const SCENARIOS: Record<string, Scenario> = {
   ledCorrect: {
     id: "ledCorrect",
@@ -171,5 +188,12 @@ export const SCENARIOS: Record<string, Scenario> = {
     label: "서보 신호 PWM 아님",
     description: "서보 신호선이 PWM 아닌 디지털핀(D2)에 연결됨",
     model: servoSignalNotPwm,
+  },
+  servoButtonViaRails: {
+    id: "servoButtonViaRails",
+    label: "서보 + 버튼 rail 회로",
+    description:
+      "아두이노 5V/GND가 빵판 rail을 먹이고, 서보는 D9(PWM), 버튼은 D2↔GND로 연결",
+    model: servoButtonViaRails,
   },
 };

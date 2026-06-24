@@ -240,6 +240,66 @@ function buildNeopixel(pins: THREE.Vector3[]): THREE.Object3D {
   return g;
 }
 
+function buildRelay(pins: THREE.Vector3[]): THREE.Object3D {
+  const g = new THREE.Group();
+  const c = centroid(pins);
+  const bodyY = 3.5;
+  pins.forEach((p) => g.add(leg(p, bodyY)));
+  // PCB 기판 (모노 슬레이트)
+  const pcb = new THREE.Mesh(
+    new THREE.BoxGeometry(16, 1.6, 12),
+    new THREE.MeshStandardMaterial({ color: 0x33373a, roughness: 0.7 }),
+  );
+  pcb.position.set(c.x, bodyY + 0.8, c.z);
+  g.add(pcb);
+  // 릴레이 캔 (직육면체 블록)
+  const can = new THREE.Mesh(
+    new THREE.BoxGeometry(7, 7, 9),
+    new THREE.MeshStandardMaterial({ color: 0x4a4f55, roughness: 0.5 }),
+  );
+  can.position.set(c.x - 3, bodyY + 5, c.z);
+  g.add(can);
+  // 스크류 단자대
+  const term = new THREE.Mesh(
+    new THREE.BoxGeometry(5, 4, 9),
+    new THREE.MeshStandardMaterial({ color: 0x6b7077, roughness: 0.55 }),
+  );
+  term.position.set(c.x + 4.5, bodyY + 3.5, c.z);
+  g.add(term);
+  return g;
+}
+
+function buildPump(pins: THREE.Vector3[]): THREE.Object3D {
+  const g = new THREE.Group();
+  const c = centroid(pins);
+  const bodyY = 5;
+  pins.forEach((p) => g.add(leg(p, bodyY)));
+  // 원통 본체(모터부) — 눕힘
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(5, 5, 12, 24),
+    new THREE.MeshStandardMaterial({ color: 0x55595e, roughness: 0.4, metalness: 0.3 }),
+  );
+  body.rotation.z = Math.PI / 2;
+  body.position.set(c.x - 1, bodyY + 5, c.z);
+  g.add(body);
+  // 펌프 헤드
+  const head = new THREE.Mesh(
+    new THREE.CylinderGeometry(4, 4, 4, 20),
+    new THREE.MeshStandardMaterial({ color: 0x7a7f85, roughness: 0.5 }),
+  );
+  head.rotation.z = Math.PI / 2;
+  head.position.set(c.x + 6, bodyY + 5, c.z);
+  g.add(head);
+  // 출수 노즐
+  const nozzle = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.2, 1.2, 6, 12),
+    new THREE.MeshStandardMaterial({ color: 0x9a9ea3, roughness: 0.5 }),
+  );
+  nozzle.position.set(c.x + 8, bodyY + 9, c.z);
+  g.add(nozzle);
+  return g;
+}
+
 const BUILDERS: Record<string, (pins: THREE.Vector3[]) => THREE.Object3D> = {
   led: buildLED,
   resistor: buildResistor,
@@ -248,6 +308,8 @@ const BUILDERS: Record<string, (pins: THREE.Vector3[]) => THREE.Object3D> = {
   piezo: buildPiezo,
   rgb: buildRGB,
   neopixel: buildNeopixel,
+  relay: buildRelay,
+  pump: buildPump,
 };
 
 export interface BuildPartOpts {

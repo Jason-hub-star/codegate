@@ -27,6 +27,7 @@ export interface WiringApi {
   parts: PlacedPart[];
   selectedPartDef: string | null;
   selectedPartUid: string | null;
+  selectedWireId: string | null;
   orientation: 0 | 1;
   model: CircuitModel;
   relocating: boolean;
@@ -44,6 +45,7 @@ export interface WiringApi {
   placeFreeAt: (x: number, z: number) => void;
   addWire: (a: string, b: string) => void;
   selectPart: (uid: string | null) => void;
+  selectWire: (id: string | null) => void;
   removePart: (uid: string) => void;
   deleteSelected: () => void;
   beginRelocate: () => void;
@@ -76,6 +78,7 @@ export function useWiring(): WiringApi {
   const [parts, setParts] = useState<PlacedPart[]>([]);
   const [selectedPartDef, setSelectedPartDef] = useState<string | null>(null);
   const [selectedPartUid, setSelectedPartUid] = useState<string | null>(null);
+  const [selectedWireId, setSelectedWireId] = useState<string | null>(null);
   const [orientation, setOrientation] = useState<0 | 1>(0);
   // 이동(relocate) 중인 부품 uid — 설정 시 배치-유사 모드로 진입(고스트·스냅 재사용),
   // 다음 홀 클릭이 새 배치가 아니라 이 부품의 재배치가 된다.
@@ -105,6 +108,7 @@ export function useWiring(): WiringApi {
     setCalibratingUid(null); // 새 부품 선택 → 보정 모드 해제
     if (defId) {
       setSelectedPartUid(null);
+      setSelectedWireId(null);
       setSelectedBoard(null);
       setRelocatingBoard(null);
     }
@@ -177,14 +181,19 @@ export function useWiring(): WiringApi {
   const addWire = useCallback(
     (a: string, b: string) => {
       wireSeq.current += 1;
+      const id = `w${wireSeq.current}`;
       pushHistory();
-      setWires((w) => [...w, { id: `w${wireSeq.current}`, a, b }]);
+      setWires((w) => [...w, { id, a, b }]);
+      setSelectedWireId(id);
+      setSelectedPartUid(null);
+      setSelectedBoard(null);
     },
     [pushHistory],
   );
 
   const selectPart = useCallback((uid: string | null) => {
     setSelectedPartUid(uid);
+    setSelectedWireId(null);
     setRelocateUid(null); // 선택 변경 → 이동 모드 해제
     setCalibratingUid(null); // 선택 변경 → 보정 모드 해제
     if (uid) {
@@ -194,9 +203,22 @@ export function useWiring(): WiringApi {
     }
   }, []);
 
+  const selectWire = useCallback((id: string | null) => {
+    setSelectedWireId(id);
+    setRelocateUid(null);
+    setCalibratingUid(null);
+    if (id) {
+      setSelectedPartUid(null);
+      setSelectedPartDef(null);
+      setSelectedBoard(null);
+      setRelocatingBoard(null);
+    }
+  }, []);
+
   // 보드(빵판·아두이노) 선택 — 부품 선택/모드 해제
   const selectBoard = useCallback((which: BoardId | null) => {
     setSelectedBoard(which);
+    setSelectedWireId(null);
     setRelocatingBoard(null);
     setCalibratingUid(null);
     if (which) {
@@ -289,7 +311,16 @@ export function useWiring(): WiringApi {
   );
 
   const deleteSelected = useCallback(() => {
-    if (selectedPartUid) {
+    if (selectedWireId) {
+      const isModelWire = wires.some((wire) => wire.id === selectedWireId);
+      if (!isModelWire) {
+        setSelectedWireId(null);
+        return;
+      }
+      pushHistory();
+      setWires((w) => w.filter((wire) => wire.id !== selectedWireId));
+      setSelectedWireId(null);
+    } else if (selectedPartUid) {
       pushHistory();
       setParts((p) => p.filter((x) => x.uid !== selectedPartUid));
       setSelectedPartUid(null);
@@ -297,7 +328,7 @@ export function useWiring(): WiringApi {
       pushHistory();
       setWires((w) => w.slice(0, -1));
     }
-  }, [selectedPartUid, wires.length, pushHistory]);
+  }, [selectedWireId, selectedPartUid, wires, pushHistory]);
 
   const rotate = useCallback(() => {
     // 보드가 선택돼 있으면 보드를 90° 회전(부품 회전보다 우선)
@@ -342,6 +373,7 @@ export function useWiring(): WiringApi {
 
   const restoreBoardSelection = () => {
     setSelectedPartUid(null);
+    setSelectedWireId(null);
     setRelocateUid(null);
     setSelectedBoard(null);
     setRelocatingBoard(null);
@@ -385,6 +417,7 @@ export function useWiring(): WiringApi {
       setBreadboardPose(layout?.breadboard ?? DEFAULT_POSE);
       setArduinoPose(layout?.arduino ?? DEFAULT_POSE);
       setSelectedPartDef(null);
+      setSelectedWireId(null);
       restoreBoardSelection();
     },
     [pushHistory],
@@ -402,6 +435,7 @@ export function useWiring(): WiringApi {
     parts,
     selectedPartDef,
     selectedPartUid,
+    selectedWireId,
     orientation,
     relocating: relocateUid !== null,
     breadboardPose,
@@ -417,6 +451,7 @@ export function useWiring(): WiringApi {
     placeFreeAt,
     addWire,
     selectPart,
+    selectWire,
     removePart,
     deleteSelected,
     beginRelocate,
