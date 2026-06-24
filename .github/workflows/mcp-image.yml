@@ -1,0 +1,59 @@
+name: MCP image (ghcr)
+
+# server/ 또는 회로 도메인·Dockerfile이 바뀌어 main에 push되면
+# amd64 컨테이너를 빌드해 ghcr.io 에 올린다. 카카오 클라우드(KC)는 이 이미지를 풀어 배포.
+# 수동 실행도 가능(workflow_dispatch).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "src/**"
+      - "Dockerfile"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/mcp-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write # GITHUB_TOKEN 으로 ghcr push
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata (tags·labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # ghcr 는 소문자만 — 소유자명 하드코딩
+          images: ghcr.io/jason-hub-star/pinmate-mcp
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+            type=ref,event=tag
+
+      - name: Build & push (linux/amd64, 단일 매니페스트)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          provenance: false # KC(KServe)가 깔끔히 풀도록 attestation 제외
+          sbom: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

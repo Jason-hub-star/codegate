@@ -23,6 +23,9 @@ RUN pnpm mcp:build
 
 FROM node:20-slim AS runtime
 WORKDIR /app
+# ghcr 패키지를 GitHub 레포에 자동 연결(수동 빌드·CI 빌드 모두).
+LABEL org.opencontainers.image.source=https://github.com/Jason-hub-star/codegate
+LABEL org.opencontainers.image.description="PinMate MCP server — 빵판 회로 한국어 진단·3D 딥링크"
 ENV NODE_ENV=production
 ENV PORT=8080
 # 3D 뷰 딥링크 베이스(배포 시 오버라이드 가능).
