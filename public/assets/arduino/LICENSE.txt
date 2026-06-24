@@ -1,0 +1,19 @@
+arduino_uno_board.glb
+=====================
+
+Title:   "Arduino Uno Board"
+Author:  crimsonfalcon (Sketchfab)
+Source:  https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669
+License: CC Attribution 4.0 (CC-BY-4.0) — http://creativecommons.org/licenses/by/4.0/
+
+⚠️ ATTRIBUTION REQUIRED (CC-BY) — 앱·포트폴리오에 아래 크레딧을 반드시 표기할 것
+(예: /about 또는 푸터의 "오픈소스 에셋" 섹션):
+
+  This work is based on "Arduino Uno Board"
+  (https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669)
+  by crimsonfalcon, licensed under CC-BY-4.0
+  (http://creativecommons.org/licenses/by/4.0/).
+
+  "Arduino Uno Board" 모델 — crimsonfalcon (Sketchfab), CC-BY-4.0.
+
+기록: 2026-06-18. 다운로드 파일 arduino_uno_board.glb (9.4MB).

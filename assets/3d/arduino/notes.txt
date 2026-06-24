@@ -1,0 +1,18 @@
+# Arduino UNO 3D 모델
+
+## 직접 다운로드 가능한 소스
+1. Sketchfab: https://sketchfab.com/ (검색: "arduino uno low poly", 필터: Free)
+2. Meshy: https://www.meshy.ai/tags/arduino (로그인 필요)
+
+## 예상 파일명
+- arduino-uno-sketchfab-v1.glb
+- arduino-uno-meshy-cc0.glb
+
+## 축 및 스케일 체크 사항
+- Y축 확인: Three.js는 Y-up (확인 후 필요시 90도 회전)
+- 스케일: 보통 1 unit = 1mm (모델별 상이)
+- 원점(0,0,0): 보드 중심 또는 좌하단 (명확히 하기)
+
+## 라이선스 확인
+- Sketchfab: CC-BY 또는 CC0 (모델 페이지 하단 License)
+- Meshy: CC0 (표기 불필요)

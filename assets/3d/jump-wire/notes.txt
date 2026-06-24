@@ -1,0 +1,25 @@
+# Jump Wire (점퍼선) 절차적 생성
+
+## 구현 위치
+src/features/breadboard-3d/three/wire.ts
+
+## 사양
+- 구성: CatmullRomCurve3 + TubeGeometry
+- 튜브 반경: ~0.8mm
+- 커넥터: 양 끝 작은 금속 단자 (구 또는 실린더)
+- 높이 띄우기: Y축 +1~2mm (빵판 위)
+
+## 색상 (Fritzing 표준)
+- 빨강: +5V, 전원
+- 파랑: GND, 그라운드
+- 검정: 신호선
+- 초록: 선택사항
+- 노랑: 선택사항
+
+## 상호작용
+- Hover: Emissive 증가
+- Active: 밝기 2배
+
+## 라이선스
+MIT (우리 저작물)
+

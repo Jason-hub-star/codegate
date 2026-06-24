@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   핀메이트 디자인 토큰 — KITvibe 에디토리얼 아카데믹 계승
+   (출처: docs/deliverables/portfolio/index.html :root, DEC-010/DEC-018)
+   네온·글래스·게임화 금지. 비움·중립·아카데믹.
+   ============================================================ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* 핀메이트 전용 추가 토큰 (DEC-018: 전용 ~6개만) */
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border-soft: var(--border-soft);
+  --color-ok: var(--ok);
+  --color-amber: var(--amber);
+  --color-error: var(--error);
+
+  --radius-sm: calc(var(--radius) - 1px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+}
+
+:root {
+  --background: #faf9f7;
+  --foreground: #1a1c1b;
+  --card: #ffffff;
+  --card-foreground: #1a1c1b;
+  --popover: #ffffff;
+  --popover-foreground: #1a1c1b;
+  --primary: #000000;
+  --primary-foreground: #e5e2e1;
+  --secondary: #efeeec;
+  --secondary-foreground: #1a1c1b;
+  --muted: #f4f3f1;
+  --muted-foreground: #474747;
+  --accent: #eae8e5;
+  --accent-foreground: #1a1c1b;
+  --destructive: #ba1a1a;
+  --border: #c6c6c6;
+  --input: #c6c6c6;
+  --ring: #1a1c1b;
+  --radius: 2px;
+
+  /* 핀메이트 전용 */
+  --surface-2: #efeeec;
+  --surface-3: #eae8e5;
+  --border-soft: #e4e2df;
+  --ok: #2f7d32;
+  --amber: #b06d00;
+  --error: #ba1a1a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

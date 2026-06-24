@@ -1,0 +1,63 @@
+PinMate 3D Assets — 다운로드 상태 리포트
+생성일: 2026-06-18
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 준비 완료
+
+✅ ASSETS.md 매니페스트
+   - 자산별 출처, 라이선스, 포맷, 다운로드 방법 기록
+   - 위치: /Users/family/jason/codegate/assets/3d/ASSETS.md
+
+✅ 폴더 구조 & 가이드
+   - arduino/notes.txt: Sketchfab, Meshy 직접 링크 + 체크사항
+   - breadboard/notes.txt: 절차적 생성 사양
+   - led/notes.txt: Thingiverse, KiCad 소스 + STL→GLB 변환 방법
+   - resistor/notes.txt: KiCad STEP 소스 + 변환 방법
+   - jump-wire/notes.txt: Three.js 절차적 생성 사양
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔴 직접 받은 자산 (자동 다운로드 불가 사유)
+
+현재 로컬 환경 네트워크 제약:
+- Sketchfab, Meshy: 로그인 또는 수동 클릭 필요
+- Thingiverse: 로그인 선택, 하지만 STL 형식 (GLB 변환 필요)
+- KiCad GitLab: API 응답 제한
+- GitHub raw: 보안 정책 (CSP 제약)
+
+→ **주인님이 요청한 대로**: 수동 필요한 것은 매니페스트에만 기록, 환각 금지.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 다음 액션 항목
+
+1️⃣ **우선순위 높음**: Sketchfab에서 Arduino UNO 저폴리 모델 2~3개 다운로드
+   → Y축 확인, 스케일 메모, 라이선스 텍스트 저장
+   → 파일: arduino-uno-sketchfab-v1.glb 등
+
+2️⃣ **선택**: Meshy에서 CC0 Arduino GLB 1개
+   → 라이선스 가장 깨끗함
+   → 파일: arduino-uno-meshy-cc0.glb
+
+3️⃣ **선택**: Thingiverse에서 LED 5mm STL 1~2개
+   → Blender/FreeCAD로 GLB 변환
+   → 파일: led-5mm-thingiverse-v1.glb
+
+4️⃣ **절차적 생성** (MVP 필수): Breadboard, Jump Wire
+   → 코드 위치는 ASSETS.md에 명시
+   → 에디토리얼 톤 (저폴리, 밝은 색, 큰 스냅)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 자산 준비도
+
+| 자산 | MVP 필수 | 상태 | 비고 |
+|------|---------|------|------|
+| Arduino | ✅ | ⏳ 수동 다운 대기 | Sketchfab 저폴리 권장 |
+| Breadboard | ✅ | 📝 절차적 설계 완료 | Three.js 코드 작성 대기 |
+| LED | ⭐ | ⏳ 수동 다운 + 변환 | 장식용, phase 1 후 추가 가능 |
+| Resistor | ⭐ | ⏳ 수동 다운 + 변환 | 장식용, phase 1 후 추가 가능 |
+| Jump Wire | ✅ | 📝 절차적 설계 완료 | Three.js 코드 작성 대기 |
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

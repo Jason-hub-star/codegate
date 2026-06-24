@@ -1,0 +1,7 @@
+# 앱 빌드와 무관한 내부 자료 — 배포 업로드 제외
+docs
+ai-context
+firmware
+.claude
+.cursor
+SSOT.md

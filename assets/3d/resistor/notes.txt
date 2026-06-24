@@ -1,0 +1,23 @@
+# Resistor (축형, 2.54mm 피치)
+
+## 직접 다운로드 가능한 소스
+1. KiCad packages3D: https://gitlab.com/kicad/libraries/kicad-packages3D
+   - 경로: Resistor_THD / Resistor_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal
+   - 포맷: WRL / STEP
+
+2. Thingiverse: https://www.thingiverse.com/search?q=resistor+axial (STL)
+
+## 변환
+- WRL 또는 STEP → GLB: `step-to-glb` 스킬
+- STL → GLB: Blender/FreeCAD CLI
+
+## 사양 (축형 DIN 0204)
+- 길이: ~3.6mm (몸통)
+- 직경: ~1.6mm
+- 다리 피치: 7.62mm (표준) → 3 홈 (빵판)
+- 색상: 베이지/갈색 몸통, 일반적 환형 띠(1/2/3/4번)
+
+## 라이선스
+- KiCad: CC-BY-SA
+- Thingiverse: 모델별 상이
+

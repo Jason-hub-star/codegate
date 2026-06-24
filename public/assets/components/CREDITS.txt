@@ -1,0 +1,18 @@
+PinMate — 3D component assets (open-source, attribution required)
+================================================================
+
+These GLB files are converted (STEP -> GLB) from openly licensed sources.
+Single source of truth: src/lib/assetCredits.ts and docs/ref/CREDITS.md.
+
+KiCad packages3D  — License: CC-BY-SA-4.0  (https://creativecommons.org/licenses/by-sa/4.0/)
+  Author: KiCad Libraries — https://gitlab.com/kicad/libraries/kicad-packages3D
+  Files: DHT11.glb, R_LDR_D13.8mm_Vertical.glb, SSD1306_OLED.glb,
+         Buzzer_12x9.5_piezo.glb, Potentiometer_Bourns_3006P.glb
+  Note: CC-BY-SA is copyleft — derivatives keep the same license; state changes.
+
+Adafruit CAD Parts — License: MIT  (https://opensource.org/license/mit)
+  Author: Adafruit Industries — https://github.com/adafruit/Adafruit_CAD_Parts
+  Files: adafruit_presence_sensor.glb (PIR), adafruit_mg923b.glb (servo),
+         adafruit_sg51r.glb (servo)
+
+Unlicensed assets are NOT included here — see assets/3d/_harvest/_QUARANTINE-no-license.

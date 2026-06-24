@@ -1,0 +1,29 @@
+# LED 5mm 3D 모델
+
+## 직접 다운로드 가능한 소스
+1. Thingiverse: https://www.thingiverse.com/search?q=led+5mm (STL → GLB 변환)
+2. KiCad packages3D: STEP 파일 (GitLab, CC-BY-SA)
+
+## 변환 방법
+### STL → GLB
+```bash
+# Blender CLI (설치 필요)
+blender --background model.stl --python-expr "import bpy; bpy.ops.export_scene.gltf(filepath='model.glb')"
+
+# FreeCAD CLI
+freecad --console model.stl -c "Mesh.show(App.ActiveDocument.ActiveObject); Mesh.export(App.ActiveDocument.ActiveObject, 'model.glb')"
+```
+
+### STEP → GLB (step-to-glb 스킬 사용)
+/step-to-glb model.step
+
+## 사양
+- 높이: ~5mm (렌즈 제외)
+- 렌즈 지름: ~5mm
+- 다리(leads) 길이: ~20mm (보통)
+- 색상: 빨강/초록/노랑/파랑/화이트 등
+
+## 라이선스
+- Thingiverse: 모델별 상이 (CC0/CC-BY 주로)
+- KiCad: CC-BY-SA
+
