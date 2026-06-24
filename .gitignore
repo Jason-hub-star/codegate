@@ -41,7 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 # AI 워크플로우 / 하네스 — 개인 작업 환경(공개 레포 제외, 로컬엔 유지)
-.claude/
+# .claude/ 는 PinMate 스킬 공개를 위해 추적(단 로컬 전용 설정은 아래에서 제외)
+.claude/settings.local.json
 .agents/
 .cursor/
 ai-context/
