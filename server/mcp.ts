@@ -5,7 +5,7 @@
  * sessionIdGenerator=undefined 로 세션을 끈다. 도구는 src/features/circuit 의
  * 순수 함수만 호출하며 전역 setActive* 를 절대 부르지 않는다 → 동시요청 오염 0.
  *
- * 식별자=pinmate. 도구명에 "kakao" 없음. 설명은 영어 + 「PinMate(핀메이트)」.
+ * 식별자=pinmate. 도구명에 "kakao" 없음. 설명은 영어 + 「핀메이트 — 3D 개발보드 튜터」.
  * 도구 5종 전부 read-only·비파괴·멱등·closed-world (annotations 5종 명시).
  */
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -49,7 +49,7 @@ function buildServer(): McpServer {
     {
       title: "Generate a beginner breadboard circuit",
       description:
-        "「PinMate(핀메이트)」 Suggest a beginner-friendly Arduino breadboard circuit from a natural-language request (Korean). Returns the parts, wiring, a Korean diagnosis, a 3D-view deep link, and a reusable circuit `code` you can pass to the other tools.",
+        "「핀메이트 — 3D 개발보드 튜터」 Suggest a beginner-friendly Arduino breadboard circuit from a natural-language request (Korean). Returns the parts, wiring, a Korean diagnosis, a 3D-view deep link, and a reusable circuit `code` you can pass to the other tools.",
       inputSchema: {
         query: z
           .string()
@@ -65,7 +65,7 @@ function buildServer(): McpServer {
     {
       title: "Diagnose a breadboard circuit",
       description:
-        "「PinMate(핀메이트)」 Diagnose a breadboard circuit encoded as a PinMate `code` (from generate_circuit or a builder share link). Returns a deterministic Korean report: parts, connections, and any errors (short, polarity, missing resistor, open circuit, voltage mismatch, …).",
+        "「핀메이트 — 3D 개발보드 튜터」 Diagnose a breadboard circuit encoded as a PinMate `code` (from generate_circuit or a builder share link). Returns a deterministic Korean report: parts, connections, and any errors (short, polarity, missing resistor, open circuit, voltage mismatch, …).",
       inputSchema: {
         code: z.string().describe("PinMate 회로 코드(code) 또는 공유 링크의 c= 값"),
       },
@@ -79,7 +79,7 @@ function buildServer(): McpServer {
     {
       title: "Explain an electronic component",
       description:
-        "「PinMate(핀메이트)」 Explain a supported electronic component (LED, resistor, button, servo, relay, pump, …) in beginner Korean: pins, operating voltage, signal type, and wiring cautions.",
+        "「핀메이트 — 3D 개발보드 튜터」 Explain a supported electronic component (LED, resistor, button, servo, relay, pump, …) in beginner Korean: pins, operating voltage, signal type, and wiring cautions.",
       inputSchema: {
         component: z
           .string()
@@ -95,7 +95,7 @@ function buildServer(): McpServer {
     {
       title: "Suggest the next wiring step",
       description:
-        "「PinMate(핀메이트)」 Given a circuit `code`, suggest the single most useful next wiring step in Korean (fix the top error first, otherwise guide toward completion). Deterministic, no LLM.",
+        "「핀메이트 — 3D 개발보드 튜터」 Given a circuit `code`, suggest the single most useful next wiring step in Korean (fix the top error first, otherwise guide toward completion). Deterministic, no LLM.",
       inputSchema: {
         code: z.string().describe("PinMate 회로 코드(code) 또는 공유 링크의 c= 값"),
       },
@@ -109,7 +109,7 @@ function buildServer(): McpServer {
     {
       title: "Get the bill of materials",
       description:
-        "「PinMate(핀메이트)」 Given a circuit `code`, return the bill of materials (parts list with counts and key specs) in Korean.",
+        "「핀메이트 — 3D 개발보드 튜터」 Given a circuit `code`, return the bill of materials (parts list with counts and key specs) in Korean.",
       inputSchema: {
         code: z.string().describe("PinMate 회로 코드(code) 또는 공유 링크의 c= 값"),
       },
