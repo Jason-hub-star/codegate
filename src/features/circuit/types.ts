@@ -14,7 +14,14 @@ export type PinRole =
 export type OperatingV = "5V" | "3.3V" | "5V/3.3V";
 
 /** 통신/신호 방식 — 시중 부품 1:1 매칭 (DEC-027, research/16) */
-export type Protocol = "onoff" | "analog" | "pwm" | "i2c" | "1-wire";
+export type Protocol =
+  | "onoff"
+  | "analog"
+  | "pwm"
+  | "i2c"
+  | "1-wire"
+  | "addressable"
+  | "pulse";
 
 /** 카탈로그 분류 (DEC-030) — 보드·빵판·입력·센서·출력·수동. 팔레트 그룹 = 이 값 */
 export type ComponentCategory =

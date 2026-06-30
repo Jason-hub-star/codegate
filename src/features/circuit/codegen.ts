@@ -35,6 +35,8 @@ const VAR_STEM: Record<string, string> = {
   oled: "oled",
   servo: "servo",
   neopixel: "pixel",
+  ultrasonicHcsr04: "ultrasonic",
+  soilMoisture: "soil",
   relay: "relay",
   pump: "pump",
 };
@@ -42,10 +44,18 @@ const stemOf = (defId: string): string =>
   VAR_STEM[defId] ?? (defId.replace(/[^a-zA-Z0-9]/g, "") || "part");
 
 /** 부품을 어떤 코드 패턴으로 다룰지 — protocol 우선, 그다음 category. */
-type Kind = "digital-out" | "digital-in" | "analog-in" | "servo" | "i2c" | "1wire";
+type Kind =
+  | "digital-out"
+  | "digital-in"
+  | "analog-in"
+  | "servo"
+  | "i2c"
+  | "1wire"
+  | "library";
 function classify(def: PartDef): Kind {
   if (def.protocol === "i2c") return "i2c";
   if (def.protocol === "1-wire") return "1wire";
+  if (def.protocol === "addressable" || def.protocol === "pulse") return "library";
   if (def.protocol === "pwm") return "servo";
   if (def.protocol === "analog") return "analog-in";
   // onoff / 미지정 → 카테고리로 입출력 방향 결정
@@ -147,8 +157,13 @@ export function buildSketch(model: CircuitModel): SketchResult {
 
   for (const b of bindings) {
     const kind = classify(b.def);
-    if (kind === "i2c" || kind === "1wire") {
-      const lib = kind === "i2c" ? "Wire(I2C) 라이브러리" : "전용 1-Wire 라이브러리";
+    if (kind === "i2c" || kind === "1wire" || kind === "library") {
+      const lib =
+        kind === "i2c"
+          ? "Wire(I2C) 라이브러리"
+          : kind === "1wire"
+            ? "전용 1-Wire 라이브러리"
+            : "전용 라이브러리/펄스 측정 코드";
       notes.push(`${b.def.label}는 ${lib}가 필요해 자동 코드 생성에서 제외했어요(핀 ${prettyPin(b)} 연결).`);
       continue;
     }

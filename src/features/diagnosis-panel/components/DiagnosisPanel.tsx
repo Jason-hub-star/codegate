@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { type Verdict } from "@/features/circuit";
+import { type Verdict, type Scenario } from "@/features/circuit";
 import { type WiringApi } from "@/features/wiring";
 import { cn } from "@/lib/utils";
 import { DiagnoseTab } from "./tabs/DiagnoseTab";
@@ -26,9 +26,11 @@ const TABS: { key: TabKey; label: string; disabled?: boolean }[] = [
 interface Props {
   w: WiringApi;
   liveVerdict: Verdict;
+  /** 예제 로드 — 빵판 연동 포함(논리 예제는 autoPlace). 부모(page)가 bench·w 둘 다 처리. */
+  onLoadScenario: (sc: Scenario) => void;
 }
 
-export function DiagnosisPanel({ w, liveVerdict }: Props) {
+export function DiagnosisPanel({ w, liveVerdict, onLoadScenario }: Props) {
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [tab, setTab] = useState<TabKey>("diagnose");
 
@@ -80,8 +82,8 @@ export function DiagnosisPanel({ w, liveVerdict }: Props) {
         )}
         {tab === "examples" && (
           <ExamplesTab
-            onLoad={(model) => {
-              w.load(model);
+            onLoad={(sc) => {
+              onLoadScenario(sc);
               setVerdict(null);
             }}
           />

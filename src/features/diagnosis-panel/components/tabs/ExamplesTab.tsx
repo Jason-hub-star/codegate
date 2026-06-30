@@ -1,6 +1,6 @@
 "use client";
 
-import { SCENARIOS, type CircuitModel } from "@/features/circuit";
+import { SCENARIOS, type Scenario } from "@/features/circuit";
 
 const EXAMPLES = [
   "ledCorrect",
@@ -10,10 +10,20 @@ const EXAMPLES = [
   "servoButtonViaRails",
   "relayControl",
   "relayPumpExternal",
+  "laserTripwire",
+  "laserButton",
+  "ldrAutoLight",
+  "pirBuzzerAlarm",
+  "pirServoDoor",
+  "potServoKnob",
+  "dht11OledWeather",
+  "ldrNeopixelNightLight",
+  "ultrasonicParkingAlarm",
+  "soilPumpAutoWatering",
 ] as const;
 
-/** 예제 탭 — 프리셋 회로 불러오기. */
-export function ExamplesTab({ onLoad }: { onLoad: (model: CircuitModel) => void }) {
+/** 예제 탭 — 프리셋 회로 불러오기(물리·논리 공존, 논리는 빵판 적응). */
+export function ExamplesTab({ onLoad }: { onLoad: (sc: Scenario) => void }) {
   return (
     <div>
       <p className="text-[11px] text-muted-foreground">예제 불러오기</p>
@@ -22,7 +32,7 @@ export function ExamplesTab({ onLoad }: { onLoad: (model: CircuitModel) => void 
           <button
             key={id}
             type="button"
-            onClick={() => onLoad(SCENARIOS[id].model)}
+            onClick={() => onLoad(SCENARIOS[id])}
             className="border border-border-soft bg-card px-2 py-1.5 text-left text-[11px] hover:bg-surface-2"
           >
             {SCENARIOS[id].label}

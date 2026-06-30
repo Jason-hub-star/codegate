@@ -66,7 +66,7 @@ export const PARTS: Record<string, PartDef> = {
     label: "가변저항",
     category: "input",
     status: "ready",
-    render: { kind: "procedural", builder: "pot" },
+    render: { kind: "glb", assetId: "pot-bourns" },
     pins: [
       { role: "power", label: "VCC" },
       { role: "analog", label: "와이퍼" },
@@ -86,7 +86,7 @@ export const PARTS: Record<string, PartDef> = {
     label: "피에조 부저 (능동)",
     category: "output",
     status: "ready",
-    render: { kind: "procedural", builder: "piezo" },
+    render: { kind: "glb", assetId: "buzzer-piezo" },
     pins: [
       { role: "signal", label: "+" },
       { role: "gnd", label: "−" },
@@ -122,6 +122,105 @@ export const PARTS: Record<string, PartDef> = {
     currentMa: 20,
     protocol: "onoff",
     description: "스타터킷 표준=공통 캐소드(가장 긴 다리=공통 −). R·G·B 각각에 저항 필요. 공통 애노드 버전도 시중에 있어요.",
+  },
+
+  buzzerModule: {
+    id: "buzzerModule",
+    label: "부저 모듈 (3핀)",
+    category: "output",
+    status: "ready",
+    render: { kind: "procedural", builder: "buzzerModule" },
+    pins: [
+      { role: "gnd", label: "−" }, // 0 왼쪽
+      { role: "power", label: "+" }, // 1 중간
+      { role: "digital", label: "S" }, // 2 오른쪽
+    ],
+    span: 1,
+    conducts: [],
+    operatingV: "5V/3.3V",
+    protocol: "onoff",
+    description:
+      "3핀 능동 부저 모듈(왼쪽부터 −/+/S). +에 전원·−에 접지를 주고, S에 HIGH 신호를 주면 울려요(I/O 제어).",
+  },
+
+  // ── 레이저 송수신 페어 (KY-008류 모듈, 구동·검출 회로 내장 = 저항 불필요) ──
+  laserTx: {
+    id: "laserTx",
+    label: "레이저 송신 모듈",
+    category: "output",
+    status: "ready",
+    mount: "free", // 모듈은 보드 밖, 3선(S/VCC/GND)을 점퍼 리드로 홀·핀에 연결(서보처럼)
+    render: { kind: "procedural", builder: "laserTx" },
+    pins: [
+      { role: "digital", label: "S" },
+      { role: "power", label: "+(VCC)" },
+      { role: "gnd", label: "−(GND)" },
+    ],
+    span: 1,
+    conducts: [],
+    operatingV: "5V/3.3V",
+    protocol: "onoff",
+    description:
+      "KY-008류 레이저 다이오드 모듈. S에 HIGH를 주면 빔 ON(구동 저항 내장이라 핀 직결 OK). 송신부를 수신 센서와 정렬해야 동작해요.",
+  },
+  laserRx: {
+    id: "laserRx",
+    label: "레이저 수신 모듈",
+    category: "sensor",
+    status: "ready",
+    mount: "free", // 모듈은 보드 밖, 3선(S/VCC/GND)을 점퍼 리드로 홀·핀에 연결(서보처럼)
+    render: { kind: "procedural", builder: "laserRx" },
+    pins: [
+      { role: "digital", label: "S" },
+      { role: "power", label: "+(VCC)" },
+      { role: "gnd", label: "−(GND)" },
+    ],
+    span: 1,
+    conducts: [],
+    operatingV: "5V/3.3V",
+    protocol: "onoff",
+    description:
+      "레이저 빔 수광 센서 모듈. 빔이 닿으면 S 출력이 바뀌어 빔 차단(침입)을 디지털로 감지. D2 같은 인터럽트 핀으로 읽으면 좋아요.",
+  },
+
+  ultrasonicHcsr04: {
+    id: "ultrasonicHcsr04",
+    label: "초음파 거리 센서 (HC-SR04)",
+    category: "sensor",
+    status: "ready",
+    mount: "free",
+    render: { kind: "procedural", builder: "ultrasonicHcsr04" },
+    pins: [
+      { role: "power", label: "VCC" },
+      { role: "digital", label: "TRIG" },
+      { role: "digital", label: "ECHO" },
+      { role: "gnd", label: "GND" },
+    ],
+    span: 1,
+    conducts: [],
+    operatingV: "5V",
+    protocol: "pulse",
+    description:
+      "HC-SR04 호환 초음파 거리 센서. TRIG에 짧은 펄스를 내보내고 ECHO 펄스 폭으로 거리를 읽어요. ESP32 같은 3.3V 보드에는 ECHO 5V 레벨 주의.",
+  },
+  soilMoisture: {
+    id: "soilMoisture",
+    label: "토양 수분 센서",
+    category: "sensor",
+    status: "ready",
+    mount: "free",
+    render: { kind: "procedural", builder: "soilMoisture" },
+    pins: [
+      { role: "power", label: "VCC" },
+      { role: "analog", label: "SIG" },
+      { role: "gnd", label: "GND" },
+    ],
+    span: 1,
+    conducts: [],
+    operatingV: "5V/3.3V",
+    protocol: "analog",
+    description:
+      "DFRobot SEN0193류 capacitive 토양 수분 센서. SIG를 A0 같은 아날로그 핀에 연결해 흙의 수분 변화를 읽어요.",
   },
 
   // ── GLB 복잡부품 (배포·렌더됨 = ready, 미배포 = staged). DEC-030 단계2에서 배치 활성 ──
@@ -216,7 +315,7 @@ export const PARTS: Record<string, PartDef> = {
     id: "neopixel",
     label: "네오픽셀 (WS2812)",
     category: "output",
-    status: "staged",
+    status: "ready",
     render: { kind: "procedural", builder: "neopixel" },
     pins: [
       { role: "power", label: "5V" },
@@ -226,6 +325,7 @@ export const PARTS: Record<string, PartDef> = {
     span: 1,
     conducts: [],
     operatingV: "5V",
+    protocol: "addressable",
     description: "주소지정 RGB LED. 단일 데이터선(WS2812 800kHz 시리얼 신호)으로 다수 제어. DIN→DOUT 체인.",
   },
 

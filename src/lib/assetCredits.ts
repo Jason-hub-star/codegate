@@ -78,7 +78,7 @@ export const ASSET_CREDITS: AssetCredit[] = [
     author: "KiCad Libraries",
     license: "CC-BY-SA-4.0",
     sourceUrl: "https://gitlab.com/kicad/libraries/kicad-packages3D",
-    rendered: false,
+    rendered: true,
   },
   {
     id: "pot-bourns",
@@ -88,7 +88,7 @@ export const ASSET_CREDITS: AssetCredit[] = [
     author: "KiCad Libraries",
     license: "CC-BY-SA-4.0",
     sourceUrl: "https://gitlab.com/kicad/libraries/kicad-packages3D",
-    rendered: false,
+    rendered: true,
   },
   {
     id: "pir-presence",

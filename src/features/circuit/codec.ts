@@ -62,7 +62,7 @@ const CircuitModelSchema = z.object({
 /**
  * Breadboard ID 스키마.
  */
-const BreadboardIdSchema = z.enum(["half", "full"]);
+const BreadboardIdSchema = z.enum(["half", "full", "mini"]);
 
 /**
  * Board(개발보드) ID 스키마 — 봉투에서 선택(생략 = 아두이노, 하위호환).

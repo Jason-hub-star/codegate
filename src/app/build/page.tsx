@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Workbench } from "@/features/breadboard-3d";
-import { diagnose } from "@/features/circuit";
+import { diagnose, autoPlace, BREADBOARDS, type Scenario } from "@/features/circuit";
 import { PartsPalette } from "@/features/parts-palette";
 import { DiagnosisPanel } from "@/features/diagnosis-panel";
 import { useWiring } from "@/features/wiring";
@@ -15,6 +15,27 @@ export default function BuildPage() {
     isEmpty: w.parts.length === 0 && w.wires.length === 0,
   });
   const liveVerdict = useMemo(() => diagnose(w.model), [w.model]);
+
+  /**
+   * 예제 로드 — 논리 예제는 현재 빵판(미지원이면 선호 빵판)으로 autoPlace 해서 적응 배치,
+   * 물리 예제는 그대로. 빵판이 바뀌면 selectBreadboard 후 load(순서: 빵판→회로).
+   */
+  const onLoadScenario = useCallback(
+    (sc: Scenario) => {
+      if (sc.logical) {
+        const supported = sc.breadboards;
+        const target =
+          !supported || supported.includes(bench.currentBreadboard)
+            ? bench.currentBreadboard
+            : supported[0];
+        if (target !== bench.currentBreadboard) bench.selectBreadboard(target);
+        w.load(autoPlace(sc.logical, BREADBOARDS[target]));
+      } else if (sc.model) {
+        w.load(sc.model);
+      }
+    },
+    [bench, w],
+  );
 
   return (
     <div className="flex h-dvh w-full flex-col">
@@ -40,7 +61,7 @@ export default function BuildPage() {
         <Workbench w={w} bench={bench} verdict={liveVerdict} />
 
         {/* 우: 진단 패널 (Diagnosis Panel) */}
-        <DiagnosisPanel w={w} liveVerdict={liveVerdict} />
+        <DiagnosisPanel w={w} liveVerdict={liveVerdict} onLoadScenario={onLoadScenario} />
       </div>
     </div>
   );

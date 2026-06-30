@@ -102,8 +102,37 @@ describe("diagnose — 결정론 규칙 엔진", () => {
     expect(v.findings).toHaveLength(0);
   });
 
-  it("서보+D9, 버튼+D2: 5V/GND rail 경유 회로 → 오류 없음", () => {
-    const v = diagnose(SCENARIOS.servoButtonViaRails.model);
+  it("서보+버튼 레일 경유 회로 → 오류 없음·레일 전원/접지", () => {
+    // 자체 물리 픽스처(레일 경유) — 레일 진단 로직 검증. 예제 배치 방식과 무관.
+    const model: CircuitModel = {
+      parts: [
+        {
+          uid: "servo1",
+          defId: "servo",
+          pinHoles: [],
+          orientation: 0,
+          anchorHoleId: "",
+          mount: "free",
+          bodyPos: { x: 0, z: 70 },
+          leads: ["e10", "T+_5", "T-_5"],
+        },
+        {
+          uid: "btn1",
+          defId: "button",
+          pinHoles: ["e20", "e22"],
+          orientation: 0,
+          anchorHoleId: "e20",
+        },
+      ],
+      wires: [
+        { id: "w1", a: "AD_5V", b: "T+_1" },
+        { id: "w2", a: "AD_GND_P1", b: "T-_1" },
+        { id: "w3", a: "AD_D9", b: "a10" },
+        { id: "w4", a: "AD_D2", b: "a20" },
+        { id: "w5", a: "a22", b: "T-_10" },
+      ],
+    };
+    const v = diagnose(model);
     expect(v.ok).toBe(true);
     expect(v.findings).toHaveLength(0);
     expect(v.energizedRails).toEqual({ "T+": "power", "T-": "ground" });

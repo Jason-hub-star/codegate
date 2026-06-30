@@ -7,10 +7,38 @@ import {
   listConnections,
   wireDebugLabel,
 } from "../connectionInfo";
-import { SCENARIOS } from "../scenarios";
+import type { CircuitModel } from "../types";
 
 describe("connectionInfo — 선택 디버그 라벨", () => {
-  const model = SCENARIOS.servoButtonViaRails.model;
+  // 자체 물리 픽스처(레일 기반 서보+버튼) — connectionInfo 로직만 검증, 예제 변경과 무관.
+  const model: CircuitModel = {
+    parts: [
+      {
+        uid: "servo1",
+        defId: "servo",
+        pinHoles: [],
+        orientation: 0,
+        anchorHoleId: "",
+        mount: "free",
+        bodyPos: { x: 0, z: 70 },
+        leads: ["e10", "T+_5", "T-_5"],
+      },
+      {
+        uid: "btn1",
+        defId: "button",
+        pinHoles: ["e20", "e22"],
+        orientation: 0,
+        anchorHoleId: "e20",
+      },
+    ],
+    wires: [
+      { id: "w1", a: "AD_5V", b: "T+_1" },
+      { id: "w2", a: "AD_GND_P1", b: "T-_1" },
+      { id: "w3", a: "AD_D9", b: "a10" },
+      { id: "w4", a: "AD_D2", b: "a20" },
+      { id: "w5", a: "a22", b: "T-_10" },
+    ],
+  };
 
   it("서보+버튼 예제 선 의미를 5V/VCC/GND/SIG/PWM 기준으로 요약", () => {
     const labels = Object.fromEntries(

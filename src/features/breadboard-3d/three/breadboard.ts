@@ -93,23 +93,25 @@ export function createBreadboard(): BreadboardObject {
   holeMesh.instanceMatrix.needsUpdate = true;
   group.add(holeMesh);
 
-  // ── 레일 스트라이프 (빨강 +, 파랑 −) ───────────────────
-  const stripeLen = colX(activeBreadboard().cols) - colX(1) + PITCH * 2;
-  const addStripe = (rail: Rail, color: number) => {
-    const geo = new THREE.BoxGeometry(stripeLen, 0.18, 0.5);
-    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
-    const s = new THREE.Mesh(geo, mat);
-    s.name = `rail-stripe:${rail}`;
-    s.userData.rail = rail;
-    s.position.set(0, 0.1, railZForStripe(rail));
-    group.add(s);
-  };
-  const RED = TOKEN.error;
-  const BLUE = POLARITY.blue;
-  addStripe("T+", RED);
-  addStripe("T-", BLUE);
-  addStripe("B+", RED);
-  addStripe("B-", BLUE);
+  // ── 레일 스트라이프 (빨강 +, 파랑 −) — 레일 없는 빵판(미니)은 생략 ─
+  if (activeBreadboard().hasRails !== false) {
+    const stripeLen = colX(activeBreadboard().cols) - colX(1) + PITCH * 2;
+    const addStripe = (rail: Rail, color: number) => {
+      const geo = new THREE.BoxGeometry(stripeLen, 0.18, 0.5);
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
+      const s = new THREE.Mesh(geo, mat);
+      s.name = `rail-stripe:${rail}`;
+      s.userData.rail = rail;
+      s.position.set(0, 0.1, railZForStripe(rail));
+      group.add(s);
+    };
+    const RED = TOKEN.error;
+    const BLUE = POLARITY.blue;
+    addStripe("T+", RED);
+    addStripe("T-", BLUE);
+    addStripe("B+", RED);
+    addStripe("B-", BLUE);
+  }
 
   // ── 가짜 컨택트 섀도 (접지, research/14 A1) ────────────
   group.add(createContactShadow(length, width, height));

@@ -23,6 +23,11 @@ export interface WorkbenchApi {
   requestSwap: (id: BreadboardId) => void;
   confirmSwap: () => void;
   cancelSwap: () => void;
+  /**
+   * 빵판만 교체(회로 초기화 안 함) — 예제 로드 전용. 호출측이 직후 w.load 로 회로를 덮으므로
+   * doSwap 의 resetCircuit 가 불필요. 확인창도 생략(예제는 회로를 통째 교체).
+   */
+  selectBreadboard: (id: BreadboardId) => void;
   // ── 보드 스왑 (빵판 미러) ──
   currentBoard: BoardId;
   /** 확인 대기 중인 보드 스왑 대상 (null = 없음) */
@@ -70,6 +75,11 @@ export function useWorkbench({ resetCircuit, isEmpty }: Options): WorkbenchApi {
 
   const cancelSwap = useCallback(() => setPendingSwap(null), []);
 
+  const selectBreadboard = useCallback((id: BreadboardId) => {
+    setActiveBreadboard(id); // 도메인 레이아웃 교체(+ 캐시 무효화)
+    setCurrent(id); // Scene 재마운트(prop). 회로는 호출측 w.load 가 덮음
+  }, []);
+
   // ── 보드 스왑 (빵판과 동일 규약) ──
   const doBoardSwap = useCallback(
     (id: BoardId) => {
@@ -102,6 +112,7 @@ export function useWorkbench({ resetCircuit, isEmpty }: Options): WorkbenchApi {
     requestSwap,
     confirmSwap,
     cancelSwap,
+    selectBreadboard,
     currentBoard,
     pendingBoardSwap,
     requestBoardSwap,

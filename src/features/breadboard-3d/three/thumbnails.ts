@@ -26,7 +26,7 @@ const FIXTURE_MESH: Record<string, () => THREE.Object3D> = {
   ...Object.fromEntries(
     Object.values(BREADBOARDS).map((d) => [
       `breadboard-${d.id}`,
-      () => buildBreadboardThumb(d.cols),
+      () => buildBreadboardThumb(d.cols, d.hasRails),
     ]),
   ),
 };

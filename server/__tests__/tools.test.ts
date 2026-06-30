@@ -88,6 +88,14 @@ describe("도구 코어 — 매칭·딥링크·에러", () => {
     expect(matchScenario("릴레이로 펌프 켜기").scenario.id).toBe("relayPumpExternal");
     expect(matchScenario("버튼 회로").scenario.id).toBe("buttonCorrect");
     expect(matchScenario("서보 모터").scenario.id).toBe("servoCorrect");
+    expect(matchScenario("조도 센서로 어두우면 LED 켜기").scenario.id).toBe("ldrAutoLight");
+    expect(matchScenario("PIR 움직임 경보기").scenario.id).toBe("pirBuzzerAlarm");
+    expect(matchScenario("PIR 자동문").scenario.id).toBe("pirServoDoor");
+    expect(matchScenario("가변저항 노브로 서보 제어").scenario.id).toBe("potServoKnob");
+    expect(matchScenario("온습도 OLED 날씨 표시").scenario.id).toBe("dht11OledWeather");
+    expect(matchScenario("네오픽셀 야간등").scenario.id).toBe("ldrNeopixelNightLight");
+    expect(matchScenario("초음파 거리 주차 경보기").scenario.id).toBe("ultrasonicParkingAlarm");
+    expect(matchScenario("토양 수분 자동 급수").scenario.id).toBe("soilPumpAutoWatering");
   });
 
   it("매칭 실패 시 score 0 + 기본 회로", () => {
@@ -99,6 +107,8 @@ describe("도구 코어 — 매칭·딥링크·에러", () => {
   it("findPart: id·라벨·한국어 별칭", () => {
     expect(findPart("led")?.id).toBe("led");
     expect(findPart("릴레이")?.id).toBe("relay");
+    expect(findPart("초음파")?.id).toBe("ultrasonicHcsr04");
+    expect(findPart("토양수분")?.id).toBe("soilMoisture");
     expect(findPart("저항")?.id).toBe("resistor");
     expect(findPart("없는부품")).toBeNull();
   });

@@ -132,6 +132,9 @@ export {
 export { SCENARIOS } from "./scenarios";
 export type { Scenario } from "./scenarios";
 
+export { autoPlace } from "./autoPlace";
+export type { LogicalCircuit, LogicalNet, LogicalPart } from "./autoPlace";
+
 export {
   BOARDS,
   ARDUINO_MODEL_KEY,

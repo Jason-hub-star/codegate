@@ -109,11 +109,14 @@ export function buildEsp32Board(): THREE.Object3D {
  * 빵판 코스메틱 썸네일 — 열수(cols)에 비례한 길이로 하프(30)·풀(63)을 시각 구분.
  * 전기 레이아웃(circuit/breadboard.ts)과 분리된 미리보기 전용. 윗면 y=0(풀 빵판 규약).
  */
-export function buildBreadboardThumb(cols: number): THREE.Object3D {
+export function buildBreadboardThumb(
+  cols: number,
+  hasRails = true,
+): THREE.Object3D {
   const g = new THREE.Group();
   g.name = `fixture:breadboard-${cols}`;
   const L = cols * PITCH + 16; // 열수 비례 길이(여백 포함)
-  const W = 55;
+  const W = hasRails ? 55 : 34; // 레일 없으면(미니) 본체 폭만
   const H = 9;
 
   // 본체 — 윗면을 y=0 에 맞춤(풀 빵판 createBreadboard 와 동일 규약)
@@ -170,18 +173,20 @@ export function buildBreadboardThumb(cols: number): THREE.Object3D {
   holeMesh.instanceMatrix.needsUpdate = true;
   g.add(holeMesh);
 
-  // 레일 스트라이프(빨강 +, 파랑 −) — 상·하단
-  const addStripe = (z: number, color: number) => {
-    const s = new THREE.Mesh(
-      new THREE.BoxGeometry(L - 10, 0.18, 0.5),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.6 }),
-    );
-    s.position.set(0, 0.1, z);
-    g.add(s);
-  };
-  addStripe(-W / 2 + 3, TOKEN.error);
-  addStripe(-W / 2 + 5, POLARITY.blue);
-  addStripe(W / 2 - 5, TOKEN.error);
-  addStripe(W / 2 - 3, POLARITY.blue);
+  // 레일 스트라이프(빨강 +, 파랑 −) — 상·하단. 레일 없는 빵판(미니)은 생략.
+  if (hasRails) {
+    const addStripe = (z: number, color: number) => {
+      const s = new THREE.Mesh(
+        new THREE.BoxGeometry(L - 10, 0.18, 0.5),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.6 }),
+      );
+      s.position.set(0, 0.1, z);
+      g.add(s);
+    };
+    addStripe(-W / 2 + 3, TOKEN.error);
+    addStripe(-W / 2 + 5, POLARITY.blue);
+    addStripe(W / 2 - 5, TOKEN.error);
+    addStripe(W / 2 - 3, POLARITY.blue);
+  }
   return g;
 }

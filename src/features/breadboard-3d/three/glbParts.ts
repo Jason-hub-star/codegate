@@ -37,6 +37,8 @@ export const GLB_PART_SPECS: Record<string, GlbPartSpec> = {
   "pir-presence": { scaleLen: 25 },
   ldr: { scaleLen: 16 },
   "oled-ssd1306": { scaleLen: 35 },
+  "buzzer-piezo": { scaleLen: 12 },
+  "pot-bourns": { scaleLen: 10 },
   "servo-mg923b": { scaleLen: 37 },
 };
 

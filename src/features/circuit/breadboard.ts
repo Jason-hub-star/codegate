@@ -16,7 +16,7 @@ export const PITCH = 2.54;
  * 행(a–j 10행)·레일·PITCH·홀 id 체계는 공통이라 cols 만 다르면 모든 파생이 따라온다.
  * 빵판 추가 = 여기 한 항목(+ BreadboardId 1줄). 카탈로그·썸네일·스왑 UI가 이걸 파생(DEC-030).
  */
-export type BreadboardId = "half" | "full";
+export type BreadboardId = "half" | "full" | "mini";
 export interface BreadboardDef {
   id: BreadboardId;
   label: string;
@@ -24,10 +24,17 @@ export interface BreadboardDef {
   cols: number;
   /** 대략 tie-point 수 (표시용) */
   tiePoints: number;
+  /**
+   * 전원 레일(T+/T-/B+/B−) 유무. 기본 true(half/full). 미니 빵판은 레일이 없어
+   * false — getHoles 가 레일 홀을 안 깔고, 렌더는 스트라이프를 생략, boardDimensions 는
+   * 본체 가장 바깥 행(a)을 폭 기준으로 쓴다. 레일 없는 빵판에선 본체 열을 전원 버스로.
+   */
+  hasRails?: boolean;
 }
 export const BREADBOARDS: Record<BreadboardId, BreadboardDef> = {
   half: { id: "half", label: "하프 빵판 (400홀)", cols: 30, tiePoints: 400 },
   full: { id: "full", label: "풀 빵판 (830홀)", cols: 63, tiePoints: 830 },
+  mini: { id: "mini", label: "미니 빵판 (170홀)", cols: 17, tiePoints: 170, hasRails: false },
 };
 
 /**
@@ -141,19 +148,21 @@ export function getHoles(bb: BreadboardDef = activeBreadboard()): Hole[] {
     });
   }
 
-  // 레일 4종
-  for (const rail of RAILS) {
-    const z = railZ(rail);
-    for (let col = 1; col <= cols; col++) {
-      if (!railHasHole(col)) continue;
-      holes.push({
-        id: `${rail}_${col}`,
-        kind: "rail",
-        col,
-        rail,
-        x: colX(col, bb),
-        z,
-      });
+  // 레일 4종 (레일 없는 빵판=미니는 생략 — 본체 홀만)
+  if (bb.hasRails !== false) {
+    for (const rail of RAILS) {
+      const z = railZ(rail);
+      for (let col = 1; col <= cols; col++) {
+        if (!railHasHole(col)) continue;
+        holes.push({
+          id: `${rail}_${col}`,
+          kind: "rail",
+          col,
+          rail,
+          x: colX(col, bb),
+          z,
+        });
+      }
     }
   }
 
@@ -185,7 +194,8 @@ export function mainHoleId(
 /** 빵판 외곽 치수 (mm) — 홀 분포 + 여백에서 산출 (기본=활성 빵판) */
 export function boardDimensions(bb: BreadboardDef = activeBreadboard()) {
   const margin = 3.2;
-  const halfWidthZ = railZ("T-") + margin; // 가장 바깥 레일 + 여백
+  // 가장 바깥 레일 + 여백. 레일 없는 빵판(미니)은 가장 바깥 본체 행(a)이 폭 기준.
+  const halfWidthZ = (bb.hasRails !== false ? railZ("T-") : TOP_BANK_EDGE_Z) + margin;
   const halfLengthX = colX(bb.cols, bb) + margin;
   return {
     length: halfLengthX * 2, // x

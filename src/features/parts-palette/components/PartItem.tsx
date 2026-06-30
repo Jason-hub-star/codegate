@@ -18,6 +18,8 @@ const PROTOCOL_LABEL: Record<Protocol, string> = {
   pwm: "PWM",
   i2c: "I2C",
   "1-wire": "1-Wire",
+  addressable: "주소지정",
+  pulse: "펄스",
 };
 
 /** 표시 메타 한 줄: 전압 · 신호 · 핀수 (보드/빵판은 핀 없음 → 생략) */

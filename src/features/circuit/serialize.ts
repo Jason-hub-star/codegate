@@ -21,6 +21,8 @@ const PROTOCOL_LABEL: Record<Protocol, string> = {
   pwm: "PWM",
   i2c: "I2C",
   "1-wire": "1-Wire",
+  addressable: "주소지정 LED",
+  pulse: "펄스",
 };
 
 /** BOM → 한국어 명세 텍스트 (LLM 프롬프트 주입용). `- 라벨 ×개수 (메타)` */
